@@ -9,6 +9,7 @@ import BudgetComparison from './components/BudgetComparison';
 import MonthSelector from './components/MonthSelector';
 import Footer from './components/Footer';
 import DarkModeToggle from './components/DarkModeToggle';
+import CollapsibleExpenseCategory from './components/CollapsibleExpenseCategory';
 import { translations } from './translations';
 import './App.css';
 
@@ -393,25 +394,17 @@ function App() {
                   {/* Expense Inputs */}
                   <div style={{ marginTop: '1.5rem' }}>
                     {Object.entries(expenseCategories).map(([category, expenseKeys]) => (
-                      <div key={category} className="card" style={{ marginBottom: '1.5rem' }}>
-                        <h3>{category}</h3>
-                        <div>
-                          {expenseKeys.map(key => (
-                                                    <ExpenseInput
-                          key={key}
-                          label={key}
-                          value={expenses[key]}
-                          onChange={(value) => handleExpenseChange(key, value)}
-                          isShared={['rent', 'apl', 'electricity', 'internet', 'insuranceHome', 'food', 'catFood'].includes(key)}
-                          onSharedChange={(isShared) => handleSharedChange(key, isShared)}
-                          sharedValue={sharedExpenses[key]}
-                          translations={translations}
-                          currentLanguage={currentLanguage}
-                          isApl={key === 'apl'}
-                        />
-                          ))}
-                        </div>
-                      </div>
+                      <CollapsibleExpenseCategory
+                        key={category}
+                        category={category}
+                        expenseKeys={expenseKeys}
+                        expenses={expenses}
+                        onExpenseChange={handleExpenseChange}
+                        sharedExpenses={sharedExpenses}
+                        onSharedChange={handleSharedChange}
+                        translations={translations}
+                        currentLanguage={currentLanguage}
+                      />
                     ))}
                   </div>
                 </div>

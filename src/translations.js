@@ -107,7 +107,11 @@ export const translations = {
     privacy: "Privacy",
     allRightsReserved: "All rights reserved.",
     madeWith: "Made with",
-    toggleDarkMode: "Toggle dark mode"
+    toggleDarkMode: "Toggle dark mode",
+    showSavedBudgets: 'Show saved budgets',
+    hideSavedBudgets: 'Hide saved budgets',
+    show: 'Show',
+    hide: 'Hide',
   },
   
   fr: {
@@ -217,6 +221,10 @@ export const translations = {
     privacy: "Confidentialité",
     allRightsReserved: "Tous droits réservés.",
     madeWith: "Fait avec",
-    toggleDarkMode: "Basculer le mode sombre"
+    toggleDarkMode: "Basculer le mode sombre",
+    showSavedBudgets: 'Afficher les budgets sauvegardés',
+    hideSavedBudgets: 'Cacher les budgets sauvegardés',
+    show: 'Afficher',
+    hide: 'Cacher',
   }
 }; 

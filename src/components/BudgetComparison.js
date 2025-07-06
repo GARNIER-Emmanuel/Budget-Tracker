@@ -29,6 +29,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
   const [selectedBudgets, setSelectedBudgets] = useState([]);
   const [selectedBudget, setSelectedBudget] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showBudgetsMobile, setShowBudgetsMobile] = useState(window.innerWidth >= 768);
 
   // Analyze budgets when savedBudgets changes
   useEffect(() => {
@@ -40,6 +41,20 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
       setDetailedComparison(null);
     }
   }, [savedBudgets]);
+
+  // Responsive toggle for saved budgets
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setShowBudgetsMobile(false);
+      } else {
+        setShowBudgetsMobile(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const generateDetailedComparison = (budgets) => {
     if (budgets.length < 2) return;
@@ -228,6 +243,32 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
         <p>{translations[currentLanguage]?.comparisonDescription || 'Analyze your saved budgets and track your financial evolution'}</p>
       </div>
 
+      {/* Toggle button for mobile */}
+      {window.innerWidth < 768 && (
+        <button
+          className="toggle-budgets-button"
+          style={{
+            margin: '0 auto 1rem auto',
+            display: 'block',
+            padding: '0.75rem 1.25rem',
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.5rem',
+            fontSize: '1rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            width: '100%',
+            maxWidth: 400,
+          }}
+          onClick={() => setShowBudgetsMobile((v) => !v)}
+        >
+          {showBudgetsMobile
+            ? (translations[currentLanguage]?.hideSavedBudgets || 'Cacher les budgets sauvegardés')
+            : (translations[currentLanguage]?.showSavedBudgets || 'Afficher les budgets sauvegardés')}
+        </button>
+      )}
+
       {savedBudgets.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📊</div>
@@ -237,50 +278,52 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
       ) : (
         <>
           {/* Saved Budgets List */}
-          <div className="saved-budgets-section">
-            <h3>{translations[currentLanguage]?.savedBudgets || 'Saved Budgets'}</h3>
-            <div className="budgets-grid">
-              {savedBudgets.map((budget, index) => (
-                <div key={budget.id} className="budget-card">
-                  <div className="budget-header">
-                    <h4>{budget.name}</h4>
-                    <div className="budget-actions">
-                      <button 
-                        onClick={() => showBudgetDetails(budget)}
-                        className="details-button"
-                        title={translations[currentLanguage]?.viewDetails || 'View details'}
-                      >
-                        👁️
-                      </button>
-                      <button 
-                        onClick={() => removeBudget(budget.id)}
-                        className="remove-button"
-                        title={translations[currentLanguage]?.removeBudget || 'Remove budget'}
-                      >
-                        ×
-                      </button>
+          {(showBudgetsMobile || window.innerWidth >= 768) && (
+            <div className="saved-budgets-section">
+              <h3>{translations[currentLanguage]?.savedBudgets || 'Saved Budgets'}</h3>
+              <div className="budgets-grid">
+                {savedBudgets.map((budget, index) => (
+                  <div key={budget.id} className="budget-card">
+                    <div className="budget-header">
+                      <h4>{budget.name}</h4>
+                      <div className="budget-actions">
+                        <button 
+                          onClick={() => showBudgetDetails(budget)}
+                          className="details-button"
+                          title={translations[currentLanguage]?.viewDetails || 'View details'}
+                        >
+                          👁️
+                        </button>
+                        <button 
+                          onClick={() => removeBudget(budget.id)}
+                          className="remove-button"
+                          title={translations[currentLanguage]?.removeBudget || 'Remove budget'}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    <div className="budget-summary">
+                      <div className="budget-item">
+                        <span>{translations[currentLanguage]?.income || 'Income'}:</span>
+                        <span className="amount income">€{budget.income}</span>
+                      </div>
+                      <div className="budget-item">
+                        <span>{translations[currentLanguage]?.totalExpenses || 'Expenses'}:</span>
+                        <span className="amount expense">€{budget.totalExpenses}</span>
+                      </div>
+                      <div className="budget-item">
+                        <span>{translations[currentLanguage]?.balance || 'Balance'}:</span>
+                        <span className={`amount ${budget.balance >= 0 ? 'positive' : 'negative'}`}>
+                          €{budget.balance}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="budget-summary">
-                    <div className="budget-item">
-                      <span>{translations[currentLanguage]?.income || 'Income'}:</span>
-                      <span className="amount income">€{budget.income}</span>
-                    </div>
-                    <div className="budget-item">
-                      <span>{translations[currentLanguage]?.totalExpenses || 'Expenses'}:</span>
-                      <span className="amount expense">€{budget.totalExpenses}</span>
-                    </div>
-                    <div className="budget-item">
-                      <span>{translations[currentLanguage]?.balance || 'Balance'}:</span>
-                      <span className={`amount ${budget.balance >= 0 ? 'positive' : 'negative'}`}>
-                        €{budget.balance}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {savedBudgets.length >= 2 && (
             <>

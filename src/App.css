@@ -560,18 +560,149 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .budgets-grid {
-    grid-template-columns: 1fr;
+  .budget-comparison {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0.5rem;
+  }
+  .charts-section,
+  .analysis-section,
+  .saved-budgets-section,
+  .recommendations,
+  .empty-state {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .budgets-grid,
+  .analysis-grid {
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+  .budget-card,
+  .analysis-card {
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+  }
+  .recommendations ul {
+    width: 100%;
+    padding-left: 0;
+  }
+  .recommendations li {
+    width: 100%;
+    text-align: left;
   }
   
-  .trends-grid {
+  .comparison-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .comparison-header p {
+    font-size: 0.875rem;
+  }
+  
+  .budgets-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .budget-card {
+    padding: 1rem;
+  }
+  
+  .budget-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .budget-actions {
+    align-self: flex-end;
+  }
+  
+  .budget-summary {
+    gap: 0.5rem;
+  }
+  
+  .budget-item {
+    padding: 0.375rem 0;
+  }
+  
+  /* Analysis section mobile */
+  .analysis-section {
+    padding: 1rem;
+  }
+  
+  .analysis-section h3 {
+    font-size: 1.25rem;
+  }
+  
+  .analysis-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .analysis-card {
+    padding: 1rem;
+  }
+  
+  .analysis-card h4 {
+    font-size: 1.125rem;
+  }
+  
+  .analysis-item {
+    padding: 0.375rem 0;
+  }
+  
+  /* Charts mobile */
+  .charts-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .charts-section h3 {
+    font-size: 1.125rem;
   }
   
   .chart-container {
     height: 300px;
+    padding: 0.75rem;
   }
   
+  /* Trends mobile */
+  .trends-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .trend-card {
+    padding: 1rem;
+  }
+  
+  .trend-card h5 {
+    font-size: 1rem;
+  }
+  
+  /* Comparison grid mobile */
   .comparison-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -579,6 +710,10 @@ body {
   
   .comparison-card {
     padding: 1rem;
+  }
+  
+  .comparison-card h4 {
+    font-size: 1.125rem;
   }
   
   .expense-change-item {
@@ -597,6 +732,34 @@ body {
     gap: 0.5rem;
   }
   
+  /* Empty state mobile */
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+  
+  .empty-state h3 {
+    font-size: 1.25rem;
+  }
+  
+  .empty-state p {
+    font-size: 1rem;
+  }
+  
+  /* Recommendations mobile */
+  .recommendations {
+    padding: 1rem;
+  }
+  
+  .recommendations h4 {
+    font-size: 1.125rem;
+  }
+  
+  .recommendations li {
+    font-size: 0.875rem;
+    padding: 0.375rem 0;
+  }
+  
+  /* Navigation mobile */
   .navigation {
     width: 100%;
     max-width: 300px;
@@ -609,6 +772,86 @@ body {
   .nav-button {
     flex: 1;
     min-width: auto;
+  }
+}
+
+/* Tablet responsive */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .budget-comparison {
+    padding: 1.5rem 1rem;
+  }
+  
+  .budgets-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .analysis-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .chart-container {
+    height: 320px;
+  }
+  
+  .comparison-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .budget-comparison {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .comparison-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .comparison-header p {
+    font-size: 0.8rem;
+  }
+  
+  .budget-card {
+    padding: 0.75rem;
+  }
+  
+  .analysis-section {
+    padding: 0.75rem;
+  }
+  
+  .analysis-card {
+    padding: 0.75rem;
+  }
+  
+  .chart-container {
+    height: 250px;
+    padding: 0.5rem;
+  }
+  
+  .empty-state {
+    padding: 1.5rem 0.75rem;
+  }
+  
+  .empty-state h3 {
+    font-size: 1.125rem;
+  }
+  
+  .empty-state p {
+    font-size: 0.875rem;
+  }
+  
+  .recommendations {
+    padding: 0.75rem;
+  }
+  
+  .recommendations h4 {
+    font-size: 1rem;
+  }
+  
+  .recommendations li {
+    font-size: 0.8rem;
   }
 }
 
@@ -1588,8 +1831,8 @@ body {
 }
 
 .dark-mode .nav-button.active {
-  background: #3b82f6;
-  color: white;
+  background: #60a5fa;
+  color: #f9fafb;
 }
 
 /* Dark mode for buttons */
