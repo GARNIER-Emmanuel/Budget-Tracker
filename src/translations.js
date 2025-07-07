@@ -171,6 +171,10 @@ export const translations = {
     dashboardDescription: 'Your personalized financial overview',
     expenseSummary: 'Expense Summary',
     expenseCharts: 'Expense Charts',
+
+    fraisBancaire: 'Bank fees',
+
+    imprevu: 'Unexpected',
   },
   
   fr: {
@@ -344,5 +348,9 @@ export const translations = {
     dashboardDescription: 'Votre aperçu financier personnalisé',
     expenseSummary: 'Résumé des Dépenses',
     expenseCharts: 'Graphiques des Dépenses',
+
+    fraisBancaire: 'Frais bancaire',
+
+    imprevu: 'Imprévu',
   }
 }; 

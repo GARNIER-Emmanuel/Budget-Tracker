@@ -137,6 +137,18 @@ const DataManager = ({ translations, currentLanguage }) => {
               payload: budget
             });
           });
+          // Met à jour le budget courant avec le dernier importé
+          if (data.savedBudgets.length > 0) {
+            const lastBudget = data.savedBudgets[data.savedBudgets.length - 1];
+            dispatch({
+              type: BUDGET_ACTIONS.LOAD_BUDGET,
+              payload: lastBudget
+            });
+            dispatch({
+              type: BUDGET_ACTIONS.SET_SELECTED_MONTH,
+              payload: `${lastBudget.month} ${lastBudget.year}`
+            });
+          }
         }
 
             if (data.financialGoals) {
@@ -203,25 +215,28 @@ const DataManager = ({ translations, currentLanguage }) => {
           year: parseInt(values[1]),
           name: `${values[0]} ${values[1]}`,
           income: parseFloat(values[2]) || 0,
-          totalExpenses: parseFloat(values[3]) || 0,
-          balance: parseFloat(values[4]) || 0,
+          autreArgentRecu: parseFloat(values[3]) || 0,
+          totalExpenses: parseFloat(values[4]) || 0,
+          balance: parseFloat(values[5]) || 0,
           expenses: {
-            rent: parseFloat(values[5]) || 0,
-            apl: parseFloat(values[6]) || 0,
-            electricity: parseFloat(values[7]) || 0,
-            internet: parseFloat(values[8]) || 0,
-            phone: parseFloat(values[9]) || 0,
-            subscriptions: parseFloat(values[10]) || 0,
-            insuranceHome: parseFloat(values[11]) || 0,
-            insuranceCar: parseFloat(values[12]) || 0,
-            gym: parseFloat(values[13]) || 0,
-            food: parseFloat(values[14]) || 0,
-            gas: parseFloat(values[15]) || 0,
-            catFood: parseFloat(values[16]) || 0,
-            leisure: parseFloat(values[17]) || 0,
-            shopping: parseFloat(values[18]) || 0,
-            savings: parseFloat(values[19]) || 0,
-            unforeseen: parseFloat(values[20]) || 0,
+            rent: parseFloat(values[6]) || 0,
+            apl: parseFloat(values[7]) || 0,
+            electricity: parseFloat(values[8]) || 0,
+            internet: parseFloat(values[9]) || 0,
+            phone: parseFloat(values[10]) || 0,
+            subscriptions: parseFloat(values[11]) || 0,
+            insuranceHome: parseFloat(values[12]) || 0,
+            insuranceCar: parseFloat(values[13]) || 0,
+            gym: parseFloat(values[14]) || 0,
+            food: parseFloat(values[15]) || 0,
+            gas: parseFloat(values[16]) || 0,
+            catFood: parseFloat(values[17]) || 0,
+            leisure: parseFloat(values[18]) || 0,
+            shopping: parseFloat(values[19]) || 0,
+            fraisBancaire: parseFloat(values[20]) || 0,
+            imprevu: parseFloat(values[21]) || 0,
+            savings: parseFloat(values[22]) || 0,
+            unforeseen: parseFloat(values[23]) || 0,
           },
           sharedExpenses: {},
           date: new Date().toISOString()

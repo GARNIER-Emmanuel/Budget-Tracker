@@ -4,7 +4,7 @@ import { validateAndRepairBudget, filterValidBudgets } from '../utils/dataValida
 // Initial state
 const initialState = {
   // Language and UI
-  currentLanguage: 'en',
+  currentLanguage: 'fr',
   isDarkMode: false,
   currentPage: 'tracker',
   
@@ -68,8 +68,6 @@ const initialState = {
   // Monthly financial goals cache
   monthlyFinancialGoals: {},
   
-
-  
   // UI preferences
   uiPreferences: {
     showAnimations: true,
@@ -79,6 +77,9 @@ const initialState = {
   
   // Notifications
   notifications: [],
+  
+  // Other received money
+  autreArgentRecu: 0,
 };
 
 // Action types
@@ -103,6 +104,7 @@ export const BUDGET_ACTIONS = {
   ADD_NOTIFICATION: 'ADD_NOTIFICATION',
   REMOVE_NOTIFICATION: 'REMOVE_NOTIFICATION',
   RESET_TO_DEFAULTS: 'RESET_TO_DEFAULTS',
+  UPDATE_AUTRE_ARGENT_RECU: 'UPDATE_AUTRE_ARGENT_RECU',
 };
 
 // Reducer
@@ -168,6 +170,7 @@ const budgetReducer = (state, action) => {
       return {
         ...state,
         income: action.payload.income,
+        autreArgentRecu: action.payload.autreArgentRecu || 0,
         expenses: action.payload.expenses,
         sharedExpenses: action.payload.sharedExpenses,
       };
@@ -241,8 +244,6 @@ const budgetReducer = (state, action) => {
         financialGoals: initialState.financialGoals
       };
       
-
-      
     case BUDGET_ACTIONS.UPDATE_UI_PREFERENCE:
       return {
         ...state,
@@ -268,6 +269,9 @@ const budgetReducer = (state, action) => {
       
     case BUDGET_ACTIONS.RESET_TO_DEFAULTS:
       return { ...initialState, currentLanguage: state.currentLanguage };
+      
+    case BUDGET_ACTIONS.UPDATE_AUTRE_ARGENT_RECU:
+      return { ...state, autreArgentRecu: action.payload };
       
     default:
       return state;
@@ -385,43 +389,20 @@ export const BudgetProvider = ({ children }) => {
         const month = currentDate.toLocaleString('en-US', { month: 'long' });
         const year = currentDate.getFullYear();
         const monthKey = state.selectedMonth || `${month} ${year}`;
-        
-        // Calculate total expenses with shared cost adjustment and APL reduction
-        const totalExpenses = Object.entries(state.expenses).reduce((total, [key, value]) => {
-          const isShared = state.sharedExpenses[key];
-          
-          // Special handling for APL (housing allowance)
-          if (key === 'apl') {
-            const aplReduction = isShared ? value / 2 : value;
-            return total - aplReduction;
-          }
-          
-          // If shared, divide by 2 (assuming equal split)
-          const adjustedValue = isShared ? value / 2 : value;
-          return total + adjustedValue;
-        }, 0);
-        
-        const balance = state.income - totalExpenses;
-        
-        const budgetData = {
-          id: Date.now(),
-          name: monthKey,
-          month: monthKey.split(' ')[0],
-          year: parseInt(monthKey.split(' ')[1]),
-          date: new Date().toISOString(),
-          income: state.income,
-          totalExpenses: totalExpenses,
-          balance: balance,
-          expenses: state.expenses,
-          sharedExpenses: state.sharedExpenses
-        };
-        
-        dispatch({ type: BUDGET_ACTIONS.SAVE_BUDGET, payload: budgetData });
-      }, 5000); // Auto-save after 5 seconds of inactivity
-      
-      return () => clearTimeout(timeoutId);
+        const monthlyGoals = state.monthlyFinancialGoals[monthKey];
+        if (monthlyGoals) {
+          dispatch({
+            type: BUDGET_ACTIONS.UPDATE_FINANCIAL_GOAL,
+            payload: { key: 'monthlySavings', value: monthlyGoals.monthlySavings }
+          });
+        }
+      }, 1000);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
-  }, [state.income, state.expenses, state.sharedExpenses, state.selectedMonth, state.uiPreferences.autoSave, state.currentPage]);
+  }, [state.uiPreferences.autoSave, state.currentPage, state.selectedMonth, state.monthlyFinancialGoals]);
 
   return (
     <BudgetContext.Provider value={{ state, dispatch }}>
@@ -430,11 +411,10 @@ export const BudgetProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use the context
 export const useBudget = () => {
   const context = useContext(BudgetContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useBudget must be used within a BudgetProvider');
   }
   return context;
-}; 
+};

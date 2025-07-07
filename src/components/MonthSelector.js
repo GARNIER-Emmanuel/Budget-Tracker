@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const MonthSelector = ({ 
   selectedMonth, 
@@ -9,6 +9,17 @@ const MonthSelector = ({
 }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonthName, setSelectedMonthName] = useState(new Date().toLocaleString('en-US', { month: 'long' }));
+
+  // Synchronise l'état local avec la prop selectedMonth
+  useEffect(() => {
+    if (selectedMonth) {
+      const [month, year] = selectedMonth.split(' ');
+      if (month && year) {
+        setSelectedMonthName(month);
+        setSelectedYear(Number(year));
+      }
+    }
+  }, [selectedMonth]);
 
   // Get current month and year
   const currentDate = new Date();

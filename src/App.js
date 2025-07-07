@@ -16,6 +16,7 @@ import NotificationSystem from './components/NotificationSystem';
 import DataManager from './components/DataManager';
 import { translations } from './translations';
 import CustomizableDashboard from './components/CustomizableDashboard';
+import BankStatementImporter from './components/BankStatementImporter';
 import './App.css';
 
 function AppContent() {
@@ -29,12 +30,14 @@ function AppContent() {
     expenses,
     sharedExpenses,
     savedBudgets,
-    selectedMonth
+    selectedMonth,
+    autreArgentRecu = 0
   } = state;
 
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = useRef(window.scrollY);
   const [incomeInput, setIncomeInput] = useState(String(income === 0 ? '' : income));
+  const [autreArgentInput, setAutreArgentInput] = useState(String(autreArgentRecu === 0 ? '' : autreArgentRecu));
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,6 +60,10 @@ function AppContent() {
   useEffect(() => {
     setIncomeInput(String(income === 0 ? '' : income));
   }, [income]);
+
+  useEffect(() => {
+    setAutreArgentInput(String(autreArgentRecu === 0 ? '' : autreArgentRecu));
+  }, [autreArgentRecu]);
 
   // Get previous month key
   const getPreviousMonthKey = (monthKey) => {
@@ -137,25 +144,25 @@ function AppContent() {
           }
         });
       } else {
-        // Fallback to default values if no previous month found
-        dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: 1400 });
-        const defaultExpenses = {
-          rent: 395, apl: 0, electricity: 20, internet: 12.25, phone: 6.99,
-          subscriptions: 15, insuranceHome: 11, insuranceCar: 52, gym: 30,
-          food: 60, gas: 50, catFood: 20, leisure: 100, shopping: 0,
-          savings: 200, unforeseen: 200,
+        // Remet toutes les valeurs à 0 si aucun budget trouvé
+        dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: 0 });
+        dispatch({ type: BUDGET_ACTIONS.UPDATE_AUTRE_ARGENT_RECU, payload: 0 });
+        const zeroExpenses = {
+          rent: 0, apl: 0, electricity: 0, internet: 0, phone: 0,
+          subscriptions: 0, insuranceHome: 0, insuranceCar: 0, gym: 0,
+          food: 0, gas: 0, catFood: 0, leisure: 0, shopping: 0, fraisBancaire: 0, imprevu: 0,
+          savings: 0, unforeseen: 0
         };
-        Object.entries(defaultExpenses).forEach(([key, value]) => {
+        Object.entries(zeroExpenses).forEach(([key, value]) => {
           dispatch({ type: BUDGET_ACTIONS.UPDATE_EXPENSE, payload: { key, value } });
         });
-        
-        const defaultShared = {
-          rent: true, apl: true, electricity: true, internet: true, phone: false,
-          subscriptions: false, insuranceHome: true, insuranceCar: false, gym: false,
-          food: true, gas: false, catFood: true, leisure: false, shopping: false,
-          savings: false, unforeseen: false,
+        const zeroShared = {
+          rent: false, apl: false, electricity: false, internet: false, phone: false,
+          subscriptions: false, insuranceHome: false, insuranceCar: false, gym: false,
+          food: false, gas: false, catFood: false, leisure: false, shopping: false, fraisBancaire: false, imprevu: false,
+          savings: false, unforeseen: false
         };
-        Object.entries(defaultShared).forEach(([key, value]) => {
+        Object.entries(zeroShared).forEach(([key, value]) => {
           dispatch({ type: BUDGET_ACTIONS.UPDATE_SHARED_EXPENSE, payload: { key, value } });
         });
       }
@@ -196,8 +203,11 @@ function AppContent() {
     }, 0);
   }, [expenses, sharedExpenses]);
 
+  // Calculate total income
+  const totalIncome = income + (Number(autreArgentRecu) || 0);
+
   // Calculate balance
-  const balance = income - totalExpenses;
+  const balance = totalIncome - totalExpenses;
 
   // Handle expense changes
   const handleExpenseChange = (key, value) => {
@@ -206,18 +216,31 @@ function AppContent() {
 
   // Handle shared expense toggle
   const handleSharedChange = (key, isShared) => {
-    dispatch({ type: BUDGET_ACTIONS.UPDATE_SHARED_EXPENSE, payload: { key, isShared } });
+    dispatch({ type: BUDGET_ACTIONS.UPDATE_SHARED_EXPENSE, payload: { key, value: isShared } });
   };
 
   // Save current budget
   const handleSaveBudget = () => {
     // Use selected month or current month
-    const monthKey = selectedMonth || (() => {
+    let monthKey = selectedMonth || (() => {
       const currentDate = new Date();
       const month = currentDate.toLocaleString('en-US', { month: 'long' });
       const year = currentDate.getFullYear();
       return `${month} ${year}`;
     })();
+    // Correction : convertit le mois numérique en lettres si besoin
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const parts = monthKey.split(' ');
+    if (parts.length === 2 && /^\d{1,2}$/.test(parts[0])) {
+      // Si le mois est un numéro (ex: 04), convertit en nom anglais
+      const monthIndex = parseInt(parts[0], 10) - 1;
+      if (monthIndex >= 0 && monthIndex < 12) {
+        monthKey = `${monthNames[monthIndex]} ${parts[1]}`;
+      }
+    }
     
     // Calculate goal achievements
     const currentSavings = expenses.savings || 0;
@@ -254,7 +277,7 @@ function AppContent() {
       month: monthKey.split(' ')[0],
       year: parseInt(monthKey.split(' ')[1]),
       date: new Date().toISOString(),
-      income: income,
+      income: totalIncome,
       totalExpenses: totalExpenses,
       balance: balance,
       expenses: expenses,
@@ -296,7 +319,7 @@ function AppContent() {
   // Group expenses by category
   const expenseCategories = {
     [translations[currentLanguage].fixedExpenses]: ['rent', 'apl', 'electricity', 'internet', 'phone', 'subscriptions', 'insuranceHome', 'insuranceCar', 'gym'],
-    [translations[currentLanguage].variableExpenses]: ['food', 'gas', 'catFood', 'leisure', 'shopping'],
+    [translations[currentLanguage].variableExpenses]: ['food', 'gas', 'catFood', 'leisure', 'shopping', 'fraisBancaire', 'imprevu'],
     [translations[currentLanguage].savingsEmergency]: ['savings', 'unforeseen']
   };
 
@@ -340,6 +363,7 @@ function AppContent() {
 
       <div className="container">
         <div className="main-content">
+          {currentPage === 'tracker' && <BankStatementImporter />}
           {currentPage === 'tracker' ? (
             <>
               <div className="grid">
@@ -374,6 +398,25 @@ function AppContent() {
                         }}
                         className="input-field"
                         placeholder="0"
+                        style={{ fontSize: '1.125rem', fontWeight: '500' }}
+                      />
+                    </div>
+                    {/* Autre argent reçu */}
+                    <div className="input-wrapper" style={{ marginTop: '0.5rem' }}>
+                      <span className="currency">€</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={autreArgentInput}
+                        onChange={e => setAutreArgentInput(e.target.value)}
+                        onBlur={() => {
+                          const val = autreArgentInput.replace(',', '.');
+                          const num = Number(val);
+                          dispatch({ type: 'UPDATE_AUTRE_ARGENT_RECU', payload: isNaN(num) ? 0 : num });
+                          setAutreArgentInput(isNaN(num) || num === 0 ? '' : String(num));
+                        }}
+                        className="input-field"
+                        placeholder="Autre argent reçu"
                         style={{ fontSize: '1.125rem', fontWeight: '500' }}
                       />
                     </div>
@@ -425,7 +468,7 @@ function AppContent() {
                       
                       {/* PDF Download Button */}
                       <PDFGenerator
-                        income={income}
+                        income={totalIncome}
                         expenses={expenses}
                         totalExpenses={totalExpenses}
                         balance={balance}
@@ -473,7 +516,7 @@ function AppContent() {
                   <ExpenseSummary 
                     totalExpenses={totalExpenses}
                     balance={balance}
-                    income={income}
+                    income={totalIncome}
                     translations={translations}
                     currentLanguage={currentLanguage}
                   />

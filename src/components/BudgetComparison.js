@@ -259,6 +259,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
 
     if (validBudgets.length === 0) return null;
 
+    // Trie uniquement les budgets existants, pas de mois "vides"
     const sortedBudgets = validBudgets.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return {
@@ -376,7 +377,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
             <div className="saved-budgets-section">
               <h3>{translations[currentLanguage]?.savedBudgets || 'Saved Budgets'}</h3>
               <div className="budgets-grid">
-                {savedBudgets.map((budget, index) => {
+                {[...savedBudgets].sort((a, b) => new Date(a.date) - new Date(b.date)).map((budget, index) => {
                   // Calculate and validate values for display
                   const income = typeof budget.income === 'number' && !isNaN(budget.income) ? budget.income : 0;
                   
