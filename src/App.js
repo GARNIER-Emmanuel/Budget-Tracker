@@ -34,6 +34,7 @@ function AppContent() {
 
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = useRef(window.scrollY);
+  const [incomeInput, setIncomeInput] = useState(String(income === 0 ? '' : income));
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,6 +53,10 @@ function AppContent() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    setIncomeInput(String(income === 0 ? '' : income));
+  }, [income]);
 
   // Get previous month key
   const getPreviousMonthKey = (monthKey) => {
@@ -357,9 +362,16 @@ function AppContent() {
                     <div className="input-wrapper">
                       <span className="currency">€</span>
                       <input
-                        type="number"
-                        value={income}
-                        onChange={(e) => dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: Number(e.target.value) || 0 })}
+                        type="text"
+                        inputMode="decimal"
+                        value={incomeInput}
+                        onChange={e => setIncomeInput(e.target.value)}
+                        onBlur={() => {
+                          const val = incomeInput.replace(',', '.');
+                          const num = Number(val);
+                          dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: isNaN(num) ? 0 : num });
+                          setIncomeInput(isNaN(num) || num === 0 ? '' : String(num));
+                        }}
                         className="input-field"
                         placeholder="0"
                         style={{ fontSize: '1.125rem', fontWeight: '500' }}

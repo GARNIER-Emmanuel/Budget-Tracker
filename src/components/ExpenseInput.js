@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Component for individual expense input fields
 const ExpenseInput = ({ 
@@ -13,6 +13,25 @@ const ExpenseInput = ({
   currentLanguage,
   isApl = false
 }) => {
+  const [inputValue, setInputValue] = useState(value === 0 ? '' : String(value));
+
+  useEffect(() => {
+    // Met à jour le champ si la valeur externe change (ex: reset)
+    setInputValue(value === 0 ? '' : String(value));
+  }, [value]);
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleBlur = () => {
+    // Conversion lors de la perte de focus
+    const val = inputValue.replace(',', '.');
+    const num = Number(val);
+    onChange(isNaN(num) ? 0 : num);
+    setInputValue(isNaN(num) || num === 0 ? '' : String(num));
+  };
+
   return (
     <div className={`card ${isApl ? 'apl-card' : ''}`}>
       <div className="input-group">
@@ -37,9 +56,11 @@ const ExpenseInput = ({
         <div className="input-wrapper">
           <span className="currency">{isApl ? '-' : '€'}</span>
           <input
-            type="number"
-            value={value}
-            onChange={(e) => onChange(Number(e.target.value) || 0)}
+            type="text"
+            inputMode="decimal"
+            value={inputValue}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
             placeholder={placeholder}
             className={`input-field ${isApl ? 'apl-input' : ''}`}
           />
