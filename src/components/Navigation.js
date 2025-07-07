@@ -5,7 +5,7 @@ const Navigation = ({ currentPage, onPageChange, translations, currentLanguage }
     <nav className="navigation">
       <div className="nav-container">
         <button
-          className={`nav-button ${currentPage === 'tracker' ? 'active' : ''}`}
+          className={`nav-button${currentPage === 'tracker' ? ' active' : ''}`}
           onClick={() => onPageChange('tracker')}
         >
           <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -14,7 +14,13 @@ const Navigation = ({ currentPage, onPageChange, translations, currentLanguage }
           {translations[currentLanguage].budgetTracker || 'Budget Tracker'}
         </button>
         <button
-          className={`nav-button ${currentPage === 'comparison' ? 'active' : ''}`}
+          className={`nav-button${currentPage === 'dashboard' ? ' active' : ''}`}
+          onClick={() => onPageChange('dashboard')}
+        >
+          {translations[currentLanguage].customizableDashboard || 'Dashboard'}
+        </button>
+        <button
+          className={`nav-button${currentPage === 'comparison' ? ' active' : ''}`}
           onClick={() => onPageChange('comparison')}
         >
           <svg className="nav-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -22,7 +28,6 @@ const Navigation = ({ currentPage, onPageChange, translations, currentLanguage }
           </svg>
           {translations[currentLanguage].budgetComparison || 'Budget Comparison'}
         </button>
-
       </div>
     </nav>
   );

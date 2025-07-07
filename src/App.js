@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { BudgetProvider, useBudget, BUDGET_ACTIONS } from './contexts/BudgetContext';
 import ExpenseInput from './components/ExpenseInput';
 import ExpenseSummary from './components/ExpenseSummary';
 import ExpenseCharts from './components/ExpenseCharts';
@@ -10,125 +11,133 @@ import MonthSelector from './components/MonthSelector';
 import Footer from './components/Footer';
 import DarkModeToggle from './components/DarkModeToggle';
 import CollapsibleExpenseCategory from './components/CollapsibleExpenseCategory';
+import FinancialGoals from './components/FinancialGoals';
+import NotificationSystem from './components/NotificationSystem';
+import DataManager from './components/DataManager';
 import { translations } from './translations';
+import CustomizableDashboard from './components/CustomizableDashboard';
 import './App.css';
 
-function App() {
-  // State for language
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+function AppContent() {
+  const { state, dispatch } = useBudget();
   
-  // State for current page
-  const [currentPage, setCurrentPage] = useState('tracker');
-  
-  // State for income
-  const [income, setIncome] = useState(1400);
+  const {
+    currentLanguage,
+    isDarkMode,
+    currentPage,
+    income,
+    expenses,
+    sharedExpenses,
+    savedBudgets,
+    selectedMonth
+  } = state;
 
-  // State for expenses with shared cost tracking
-  const [expenses, setExpenses] = useState({
-    // Fixed expenses (can be shared)
-    rent: 395,
-    apl: 0, // Housing allowance (APL)
-    electricity: 20,
-    internet: 12.25,
-    phone: 6.99,
-    subscriptions: 15,
-    insuranceHome: 11,
-    insuranceCar: 52,
-    gym: 30,
+  // Get previous month key
+  const getPreviousMonthKey = (monthKey) => {
+    const [month, year] = monthKey.split(' ');
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
     
-    // Variable expenses
-    food: 60,
-    gas: 50,
-    catFood: 20,
-    leisure: 100,
-    shopping: 0,
+    let monthIndex = monthNames.indexOf(month);
+    let yearNum = parseInt(year);
     
-    // Savings and emergency fund
-    savings: 200,
-    unforeseen: 200,
-  });
-
-  // State for tracking which expenses are shared
-  const [sharedExpenses, setSharedExpenses] = useState({
-    rent: true,
-    apl: true, // APL can be shared
-    electricity: true,
-    internet: true,
-    phone: false,
-    subscriptions: false,
-    insuranceHome: true,
-    insuranceCar: false,
-    gym: false,
-    food: true, // Food can be shared
-    gas: false,
-    catFood: true, // Cat food can be shared
-    leisure: false,
-    shopping: false,
-    savings: false,
-    unforeseen: false,
-  });
-
-  // State for saved budgets
-  const [savedBudgets, setSavedBudgets] = useState(() => {
-    const saved = localStorage.getItem('savedBudgets');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // State for selected month
-  const [selectedMonth, setSelectedMonth] = useState(null);
-
-  // State for dark mode
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : false;
-  });
+    if (monthIndex === 0) {
+      monthIndex = 11;
+      yearNum--;
+    } else {
+      monthIndex--;
+    }
+    
+    return `${monthNames[monthIndex]} ${yearNum}`;
+  };
 
   // Load data for a specific month
   const loadMonthData = (monthKey) => {
     const budget = savedBudgets.find(budget => budget.name === monthKey);
     
     if (budget) {
-      setIncome(budget.income);
-      setExpenses(budget.expenses);
-      setSharedExpenses(budget.sharedExpenses);
-    } else {
-      // Reset to default values for new month
-      setIncome(1400);
-      setExpenses({
-        rent: 395,
-        apl: 0,
-        electricity: 20,
-        internet: 12.25,
-        phone: 6.99,
-        subscriptions: 15,
-        insuranceHome: 11,
-        insuranceCar: 52,
-        gym: 30,
-        food: 60,
-        gas: 50,
-        catFood: 20,
-        leisure: 100,
-        shopping: 0,
-        savings: 200,
-        unforeseen: 200,
+      dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: budget.income });
+      Object.entries(budget.expenses).forEach(([key, value]) => {
+        dispatch({ type: BUDGET_ACTIONS.UPDATE_EXPENSE, payload: { key, value } });
       });
-      setSharedExpenses({
-        rent: true,
-        apl: true,
-        electricity: true,
-        internet: true,
-        phone: false,
-        subscriptions: false,
-        insuranceHome: true,
-        insuranceCar: false,
-        gym: false,
-        food: true,
-        gas: false,
-        catFood: true,
-        leisure: false,
-        shopping: false,
-        savings: false,
-        unforeseen: false,
+      Object.entries(budget.sharedExpenses).forEach(([key, value]) => {
+        dispatch({ type: BUDGET_ACTIONS.UPDATE_SHARED_EXPENSE, payload: { key, value } });
+      });
+      
+      // Load financial goals for this month if available
+      if (budget.financialGoals) {
+        Object.entries(budget.financialGoals).forEach(([key, value]) => {
+          dispatch({
+            type: BUDGET_ACTIONS.UPDATE_FINANCIAL_GOAL,
+            payload: { key, value }
+          });
+        });
+      }
+    } else {
+      // Try to load data from previous month
+      const previousMonthKey = getPreviousMonthKey(monthKey);
+      const previousBudget = savedBudgets.find(budget => budget.name === previousMonthKey);
+      
+      if (previousBudget) {
+        // Load values from previous month
+        dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: previousBudget.income });
+        Object.entries(previousBudget.expenses).forEach(([key, value]) => {
+          dispatch({ type: BUDGET_ACTIONS.UPDATE_EXPENSE, payload: { key, value } });
+        });
+        Object.entries(previousBudget.sharedExpenses).forEach(([key, value]) => {
+          dispatch({ type: BUDGET_ACTIONS.UPDATE_SHARED_EXPENSE, payload: { key, value } });
+        });
+        
+        // Load financial goals from previous month if available
+        if (previousBudget.financialGoals) {
+          Object.entries(previousBudget.financialGoals).forEach(([key, value]) => {
+            dispatch({
+              type: BUDGET_ACTIONS.UPDATE_FINANCIAL_GOAL,
+              payload: { key, value }
+            });
+          });
+        }
+        
+        // Add notification
+        dispatch({
+          type: BUDGET_ACTIONS.ADD_NOTIFICATION,
+          payload: {
+            id: Date.now(),
+            type: 'info',
+            message: `${translations[currentLanguage].loadedFromPreviousMonth || 'Loaded values from'} ${previousMonthKey}`,
+            duration: 3000
+          }
+        });
+      } else {
+        // Fallback to default values if no previous month found
+        dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: 1400 });
+        const defaultExpenses = {
+          rent: 395, apl: 0, electricity: 20, internet: 12.25, phone: 6.99,
+          subscriptions: 15, insuranceHome: 11, insuranceCar: 52, gym: 30,
+          food: 60, gas: 50, catFood: 20, leisure: 100, shopping: 0,
+          savings: 200, unforeseen: 200,
+        };
+        Object.entries(defaultExpenses).forEach(([key, value]) => {
+          dispatch({ type: BUDGET_ACTIONS.UPDATE_EXPENSE, payload: { key, value } });
+        });
+        
+        const defaultShared = {
+          rent: true, apl: true, electricity: true, internet: true, phone: false,
+          subscriptions: false, insuranceHome: true, insuranceCar: false, gym: false,
+          food: true, gas: false, catFood: true, leisure: false, shopping: false,
+          savings: false, unforeseen: false,
+        };
+        Object.entries(defaultShared).forEach(([key, value]) => {
+          dispatch({ type: BUDGET_ACTIONS.UPDATE_SHARED_EXPENSE, payload: { key, value } });
+        });
+      }
+      
+      // Try to load financial goals from monthly cache
+      dispatch({
+        type: BUDGET_ACTIONS.LOAD_MONTHLY_FINANCIAL_GOALS,
+        payload: { monthKey }
       });
     }
   };
@@ -166,18 +175,12 @@ function App() {
 
   // Handle expense changes
   const handleExpenseChange = (key, value) => {
-    setExpenses(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    dispatch({ type: BUDGET_ACTIONS.UPDATE_EXPENSE, payload: { key, value } });
   };
 
   // Handle shared expense toggle
   const handleSharedChange = (key, isShared) => {
-    setSharedExpenses(prev => ({
-      ...prev,
-      [key]: isShared
-    }));
+    dispatch({ type: BUDGET_ACTIONS.UPDATE_SHARED_EXPENSE, payload: { key, isShared } });
   };
 
   // Save current budget
@@ -190,6 +193,35 @@ function App() {
       return `${month} ${year}`;
     })();
     
+    // Calculate goal achievements
+    const currentSavings = expenses.savings || 0;
+    const currentLeisure = expenses.leisure || 0;
+    const totalEmergencyFund = savedBudgets.reduce((total, budget) => {
+      return total + (budget.expenses?.unforeseen || 0);
+    }, 0) + (expenses.unforeseen || 0);
+    
+    const financialGoals = state.financialGoals;
+    const goalAchievements = {
+      monthlySavings: {
+        target: financialGoals.monthlySavings,
+        current: currentSavings,
+        achieved: currentSavings >= financialGoals.monthlySavings,
+        progress: Math.min((currentSavings / financialGoals.monthlySavings) * 100, 100)
+      },
+      maxLeisureSpending: {
+        target: financialGoals.maxLeisureSpending,
+        current: currentLeisure,
+        achieved: currentLeisure <= financialGoals.maxLeisureSpending,
+        progress: Math.min((currentLeisure / financialGoals.maxLeisureSpending) * 100, 100)
+      },
+      emergencyFundTarget: {
+        target: financialGoals.emergencyFundTarget,
+        current: totalEmergencyFund,
+        achieved: totalEmergencyFund >= financialGoals.emergencyFundTarget,
+        progress: Math.min((totalEmergencyFund / financialGoals.emergencyFundTarget) * 100, 100)
+      }
+    };
+    
     const budgetData = {
       id: Date.now(),
       name: monthKey,
@@ -200,50 +232,39 @@ function App() {
       totalExpenses: totalExpenses,
       balance: balance,
       expenses: expenses,
-      sharedExpenses: sharedExpenses
+      sharedExpenses: sharedExpenses,
+      financialGoals: financialGoals,
+      goalAchievements: goalAchievements
     };
 
-    // Check if a budget for this month already exists
+    dispatch({ type: BUDGET_ACTIONS.SAVE_BUDGET, payload: budgetData });
+    
+    // Add notification
     const existingBudgetIndex = savedBudgets.findIndex(budget => budget.name === monthKey);
-    
-    let updatedBudgets;
-    if (existingBudgetIndex !== -1) {
-      // Replace existing budget for this month
-      updatedBudgets = [...savedBudgets];
-      updatedBudgets[existingBudgetIndex] = budgetData;
-    } else {
-      // Add new budget
-      updatedBudgets = [...savedBudgets, budgetData];
-    }
-    
-    setSavedBudgets(updatedBudgets);
-    localStorage.setItem('savedBudgets', JSON.stringify(updatedBudgets));
-    
-    // Show success message
     const message = existingBudgetIndex !== -1 
       ? (translations[currentLanguage].budgetUpdated || 'Budget updated successfully!')
       : (translations[currentLanguage].budgetSaved || 'Budget saved successfully!');
-    alert(message);
+    
+    dispatch({
+      type: BUDGET_ACTIONS.ADD_NOTIFICATION,
+      payload: {
+        id: Date.now(),
+        type: 'success',
+        message,
+        duration: 3000
+      }
+    });
   };
 
   // Handle month selection
   const handleMonthChange = (monthKey) => {
-    setSelectedMonth(monthKey);
+    dispatch({ type: BUDGET_ACTIONS.SET_SELECTED_MONTH, payload: monthKey });
     loadMonthData(monthKey);
   };
 
   // Handle dark mode toggle
   const handleDarkModeToggle = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', JSON.stringify(newDarkMode));
-    
-    // Apply dark mode class to body
-    if (newDarkMode) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
+    dispatch({ type: BUDGET_ACTIONS.TOGGLE_DARK_MODE });
   };
 
   // Group expenses by category
@@ -258,15 +279,6 @@ function App() {
     loadCurrentMonthData();
   }, []);
 
-  // Apply dark mode on mount
-  React.useEffect(() => {
-    if (isDarkMode) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
-  }, [isDarkMode]);
-
   return (
     <div>
       {/* Header */}
@@ -279,7 +291,7 @@ function App() {
           <div className="header-center">
             <Navigation
               currentPage={currentPage}
-              onPageChange={setCurrentPage}
+              onPageChange={(page) => dispatch({ type: BUDGET_ACTIONS.SET_CURRENT_PAGE, payload: page })}
               translations={translations}
               currentLanguage={currentLanguage}
             />
@@ -293,7 +305,7 @@ function App() {
             />
             <LanguageSelector 
               currentLanguage={currentLanguage}
-              onLanguageChange={setCurrentLanguage}
+              onLanguageChange={(lang) => dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: lang })}
               translations={translations}
             />
           </div>
@@ -326,7 +338,7 @@ function App() {
                       <input
                         type="number"
                         value={income}
-                        onChange={(e) => setIncome(Number(e.target.value) || 0)}
+                        onChange={(e) => dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: Number(e.target.value) || 0 })}
                         className="input-field"
                         placeholder="0"
                         style={{ fontSize: '1.125rem', fontWeight: '500' }}
@@ -391,20 +403,33 @@ function App() {
                     </div>
                   </div>
 
+                  {/* Financial Goals */}
+                  <FinancialGoals
+                    translations={translations}
+                    currentLanguage={currentLanguage}
+                  />
+
+                  {/* Data Manager */}
+                  <DataManager
+                    translations={translations}
+                    currentLanguage={currentLanguage}
+                  />
+
                   {/* Expense Inputs */}
-                  <div style={{ marginTop: '1.5rem' }}>
-                    {Object.entries(expenseCategories).map(([category, expenseKeys]) => (
-                      <CollapsibleExpenseCategory
-                        key={category}
-                        category={category}
-                        expenseKeys={expenseKeys}
-                        expenses={expenses}
-                        onExpenseChange={handleExpenseChange}
-                        sharedExpenses={sharedExpenses}
-                        onSharedChange={handleSharedChange}
-                        translations={translations}
-                        currentLanguage={currentLanguage}
-                      />
+                  <div style={{ marginTop: '2rem' }}>
+                    {Object.entries(expenseCategories).map(([category, expenseKeys], index) => (
+                      <div key={category} style={{ marginBottom: index < Object.keys(expenseCategories).length - 1 ? '2rem' : '0' }}>
+                        <CollapsibleExpenseCategory
+                          category={category}
+                          expenseKeys={expenseKeys}
+                          expenses={expenses}
+                          onExpenseChange={handleExpenseChange}
+                          sharedExpenses={sharedExpenses}
+                          onSharedChange={handleSharedChange}
+                          translations={translations}
+                          currentLanguage={currentLanguage}
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -451,7 +476,12 @@ function App() {
               translations={translations}
               currentLanguage={currentLanguage}
               savedBudgets={savedBudgets}
-              setSavedBudgets={setSavedBudgets}
+              isDarkMode={isDarkMode}
+            />
+          ) : currentPage === 'dashboard' ? (
+            <CustomizableDashboard
+              translations={translations}
+              currentLanguage={currentLanguage}
               isDarkMode={isDarkMode}
             />
           ) : null}
@@ -463,7 +493,19 @@ function App() {
         translations={translations}
         currentLanguage={currentLanguage}
       />
+      
+      {/* Notification System */}
+      <NotificationSystem />
     </div>
+  );
+}
+
+// Main App component with Provider
+function App() {
+  return (
+    <BudgetProvider>
+      <AppContent />
+    </BudgetProvider>
   );
 }
 

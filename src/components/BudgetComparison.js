@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import BudgetDetailsModal from './BudgetDetailsModal';
+import { useBudget, BUDGET_ACTIONS } from '../contexts/BudgetContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,7 +24,8 @@ ChartJS.register(
   Legend
 );
 
-const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSavedBudgets, isDarkMode = false }) => {
+const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkMode = false }) => {
+  const { dispatch } = useBudget();
   const [analysis, setAnalysis] = useState(null);
   const [detailedComparison, setDetailedComparison] = useState(null);
   const [selectedBudgets, setSelectedBudgets] = useState([]);
@@ -33,9 +35,62 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
 
   // Analyze budgets when savedBudgets changes
   useEffect(() => {
-    if (savedBudgets.length >= 2) {
-      analyzeBudgets(savedBudgets);
-      generateDetailedComparison(savedBudgets);
+    // Clean up and recalculate budgets
+    const updatedBudgets = savedBudgets.map(budget => {
+      if (!budget || !budget.expenses || !budget.sharedExpenses) {
+        return budget;
+      }
+
+      // Recalculate totalExpenses and balance
+      const totalExpenses = Object.entries(budget.expenses).reduce((total, [key, value]) => {
+        const isShared = budget.sharedExpenses[key];
+        const numValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+        
+        // Special handling for APL (housing allowance)
+        if (key === 'apl') {
+          const aplReduction = isShared ? numValue / 2 : numValue;
+          return total - aplReduction;
+        }
+        
+        // If shared, divide by 2 (assuming equal split)
+        const adjustedValue = isShared ? numValue / 2 : numValue;
+        return total + adjustedValue;
+      }, 0);
+
+      const income = typeof budget.income === 'number' && !isNaN(budget.income) ? budget.income : 0;
+      const balance = income - totalExpenses;
+
+      return {
+        ...budget,
+        totalExpenses,
+        balance
+      };
+    });
+
+    // Filter out completely invalid budgets
+    const validBudgets = updatedBudgets.filter(budget => 
+      budget &&
+      typeof budget.income === 'number' && 
+      !isNaN(budget.income) &&
+      typeof budget.totalExpenses === 'number' && 
+      !isNaN(budget.totalExpenses) &&
+      typeof budget.balance === 'number' && 
+      !isNaN(budget.balance)
+    );
+
+    // Update budgets if values changed
+    if (JSON.stringify(updatedBudgets) !== JSON.stringify(savedBudgets)) {
+      console.log('Updating budgets with recalculated values...');
+      // Update each budget individually through the context
+      updatedBudgets.forEach(budget => {
+        dispatch({ type: BUDGET_ACTIONS.SAVE_BUDGET, payload: budget });
+      });
+      return;
+    }
+
+    if (validBudgets.length >= 2) {
+      analyzeBudgets(validBudgets);
+      generateDetailedComparison(validBudgets);
     } else {
       setAnalysis(null);
       setDetailedComparison(null);
@@ -59,6 +114,18 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
   const generateDetailedComparison = (budgets) => {
     if (budgets.length < 2) return;
 
+    // Filter out invalid budgets
+    const validBudgets = budgets.filter(budget => 
+      typeof budget.totalExpenses === 'number' && 
+      !isNaN(budget.totalExpenses) &&
+      typeof budget.balance === 'number' && 
+      !isNaN(budget.balance) &&
+      typeof budget.income === 'number' && 
+      !isNaN(budget.income)
+    );
+
+    if (validBudgets.length < 2) return;
+
     const comparison = {
       expenseChanges: {},
       categoryAnalysis: {},
@@ -67,7 +134,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
     };
 
     // Sort budgets by date
-    const sortedBudgets = budgets.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedBudgets = validBudgets.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const firstBudget = sortedBudgets[0];
     const lastBudget = sortedBudgets[sortedBudgets.length - 1];
@@ -113,7 +180,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
     };
 
     // Savings analysis
-    const avgSavingsRate = budgets.map(b => (b.balance / b.income) * 100).reduce((a, b) => a + b, 0) / budgets.length;
+    const avgSavingsRate = validBudgets.map(b => (b.balance / b.income) * 100).reduce((a, b) => a + b, 0) / validBudgets.length;
     if (avgSavingsRate < 10) {
       comparison.recommendations.push(`Taux d'épargne moyen de ${avgSavingsRate.toFixed(1)}%. Objectif recommandé: 20%.`);
     }
@@ -124,32 +191,47 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
   const analyzeBudgets = (budgets) => {
     if (budgets.length < 2) return;
 
+    // Filter out invalid budgets (missing totalExpenses or balance)
+    const validBudgets = budgets.filter(budget => 
+      typeof budget.totalExpenses === 'number' && 
+      !isNaN(budget.totalExpenses) &&
+      typeof budget.balance === 'number' && 
+      !isNaN(budget.balance) &&
+      typeof budget.income === 'number' && 
+      !isNaN(budget.income)
+    );
+
+    if (validBudgets.length < 2) {
+      console.warn('Not enough valid budgets for analysis');
+      return;
+    }
+
     const analysis = {
-      totalBudgets: budgets.length,
+      totalBudgets: validBudgets.length,
       dateRange: {
-        start: budgets[0].name,
-        end: budgets[budgets.length - 1].name
+        start: validBudgets[0].name,
+        end: validBudgets[validBudgets.length - 1].name
       },
-      averageIncome: budgets.reduce((sum, b) => sum + b.income, 0) / budgets.length,
-      averageExpenses: budgets.reduce((sum, b) => sum + b.totalExpenses, 0) / budgets.length,
-      averageBalance: budgets.reduce((sum, b) => sum + b.balance, 0) / budgets.length,
-      totalSavings: budgets.reduce((sum, b) => sum + b.balance, 0),
+      averageIncome: validBudgets.reduce((sum, b) => sum + (b.income || 0), 0) / validBudgets.length,
+      averageExpenses: validBudgets.reduce((sum, b) => sum + (b.totalExpenses || 0), 0) / validBudgets.length,
+      averageBalance: validBudgets.reduce((sum, b) => sum + (b.balance || 0), 0) / validBudgets.length,
+      totalSavings: validBudgets.reduce((sum, b) => sum + (b.balance || 0), 0),
       expenseBreakdown: {}
     };
 
     // Calculate average expenses by category
-    const expenseCategories = Object.keys(budgets[0].expenses);
-    expenseCategories.forEach(category => {
-      analysis.expenseBreakdown[category] = budgets.reduce((sum, b) => sum + b.expenses[category], 0) / budgets.length;
-    });
+    if (validBudgets[0].expenses) {
+      const expenseCategories = Object.keys(validBudgets[0].expenses);
+      expenseCategories.forEach(category => {
+        analysis.expenseBreakdown[category] = validBudgets.reduce((sum, b) => sum + (b.expenses?.[category] || 0), 0) / validBudgets.length;
+      });
+    }
 
     setAnalysis(analysis);
   };
 
   const removeBudget = (id) => {
-    const updatedBudgets = savedBudgets.filter(budget => budget.id !== id);
-    setSavedBudgets(updatedBudgets);
-    localStorage.setItem('savedBudgets', JSON.stringify(updatedBudgets));
+    dispatch({ type: BUDGET_ACTIONS.DELETE_BUDGET, payload: id });
   };
 
   const showBudgetDetails = (budget) => {
@@ -165,7 +247,19 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
   const prepareChartData = () => {
     if (savedBudgets.length === 0) return null;
 
-    const sortedBudgets = savedBudgets.sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Filter out invalid budgets for charts
+    const validBudgets = savedBudgets.filter(budget => 
+      typeof budget.totalExpenses === 'number' && 
+      !isNaN(budget.totalExpenses) &&
+      typeof budget.balance === 'number' && 
+      !isNaN(budget.balance) &&
+      typeof budget.income === 'number' && 
+      !isNaN(budget.income)
+    );
+
+    if (validBudgets.length === 0) return null;
+
+    const sortedBudgets = validBudgets.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return {
       labels: sortedBudgets.map(b => b.name),
@@ -282,50 +376,108 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, setSave
             <div className="saved-budgets-section">
               <h3>{translations[currentLanguage]?.savedBudgets || 'Saved Budgets'}</h3>
               <div className="budgets-grid">
-                {savedBudgets.map((budget, index) => (
-                  <div key={budget.id} className="budget-card">
-                    <div className="budget-header">
-                      <h4>{budget.name}</h4>
-                      <div className="budget-actions">
-                        <button 
-                          onClick={() => showBudgetDetails(budget)}
-                          className="details-button"
-                          title={translations[currentLanguage]?.viewDetails || 'View details'}
-                        >
-                          👁️
-                        </button>
-                        <button 
-                          onClick={() => removeBudget(budget.id)}
-                          className="remove-button"
-                          title={translations[currentLanguage]?.removeBudget || 'Remove budget'}
-                        >
-                          ×
-                        </button>
+                {savedBudgets.map((budget, index) => {
+                  // Calculate and validate values for display
+                  const income = typeof budget.income === 'number' && !isNaN(budget.income) ? budget.income : 0;
+                  
+                  // Calculate total expenses with shared cost adjustment and APL reduction
+                  const totalExpenses = budget.expenses && budget.sharedExpenses ? 
+                    Object.entries(budget.expenses).reduce((total, [key, value]) => {
+                      const isShared = budget.sharedExpenses[key];
+                      const numValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+                      
+                      // Special handling for APL (housing allowance)
+                      if (key === 'apl') {
+                        const aplReduction = isShared ? numValue / 2 : numValue;
+                        return total - aplReduction;
+                      }
+                      
+                      // If shared, divide by 2 (assuming equal split)
+                      const adjustedValue = isShared ? numValue / 2 : numValue;
+                      return total + adjustedValue;
+                    }, 0) : (budget.totalExpenses || 0);
+                  
+                  const balance = income - totalExpenses;
+                  
+                  return (
+                    <div key={budget.id} className="budget-card">
+                      <div className="budget-header">
+                        <h4>{budget.name}</h4>
+                        <div className="budget-actions">
+                          <button 
+                            onClick={() => showBudgetDetails(budget)}
+                            className="details-button"
+                            title={translations[currentLanguage]?.viewDetails || 'View details'}
+                          >
+                            👁️
+                          </button>
+                          <button 
+                            onClick={() => removeBudget(budget.id)}
+                            className="remove-button"
+                            title={translations[currentLanguage]?.removeBudget || 'Remove budget'}
+                          >
+                            ×
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="budget-summary">
+                                          <div className="budget-summary">
                       <div className="budget-item">
                         <span>{translations[currentLanguage]?.income || 'Income'}:</span>
-                        <span className="amount income">€{budget.income}</span>
+                        <span className="amount income">€{income.toFixed(2)}</span>
                       </div>
                       <div className="budget-item">
                         <span>{translations[currentLanguage]?.totalExpenses || 'Expenses'}:</span>
-                        <span className="amount expense">€{budget.totalExpenses}</span>
+                        <span className="amount expense">€{totalExpenses.toFixed(2)}</span>
                       </div>
                       <div className="budget-item">
                         <span>{translations[currentLanguage]?.balance || 'Balance'}:</span>
-                        <span className={`amount ${budget.balance >= 0 ? 'positive' : 'negative'}`}>
-                          €{budget.balance}
+                        <span className={`amount ${balance >= 0 ? 'positive' : 'negative'}`}>
+                          €{balance.toFixed(2)}
                         </span>
                       </div>
                     </div>
-                  </div>
-                ))}
+                    
+                    {/* Financial Goals Status */}
+                    {budget.goalAchievements && (
+                      <div className="budget-goals">
+                        <h5>{translations[currentLanguage]?.financialGoals || 'Financial Goals'}</h5>
+                        <div className="goals-status">
+                          <div className="goal-status-item">
+                            <span className="goal-label">{translations[currentLanguage]?.monthlySavingsGoal || 'Savings'}:</span>
+                            <span className={`goal-status ${budget.goalAchievements.monthlySavings.achieved ? 'achieved' : 'not-achieved'}`}>
+                              {budget.goalAchievements.monthlySavings.achieved ? '✅' : '❌'}
+                            </span>
+                          </div>
+                          <div className="goal-status-item">
+                            <span className="goal-label">{translations[currentLanguage]?.leisureSpendingLimit || 'Leisure'}:</span>
+                            <span className={`goal-status ${budget.goalAchievements.maxLeisureSpending.achieved ? 'achieved' : 'not-achieved'}`}>
+                              {budget.goalAchievements.maxLeisureSpending.achieved ? '✅' : '❌'}
+                            </span>
+                          </div>
+                          <div className="goal-status-item">
+                            <span className="goal-label">{translations[currentLanguage]?.emergencyFund || 'Emergency'}:</span>
+                            <span className={`goal-status ${budget.goalAchievements.emergencyFundTarget.achieved ? 'achieved' : 'not-achieved'}`}>
+                              {budget.goalAchievements.emergencyFundTarget.achieved ? '✅' : '❌'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {savedBudgets.length >= 2 && (
+          {savedBudgets.filter(budget => 
+            typeof budget.totalExpenses === 'number' && 
+            !isNaN(budget.totalExpenses) &&
+            typeof budget.balance === 'number' && 
+            !isNaN(budget.balance) &&
+            typeof budget.income === 'number' && 
+            !isNaN(budget.income)
+          ).length >= 2 && (
             <>
               {/* Charts */}
               <div className="charts-section" style={{ marginBottom: '2rem' }}>

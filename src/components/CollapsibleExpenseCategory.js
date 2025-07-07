@@ -18,7 +18,7 @@ const CollapsibleExpenseCategory = ({
   };
 
   return (
-    <div className="collapsible-card" style={{ marginBottom: '1.5rem' }}>
+    <div className="collapsible-card" style={{ marginBottom: '0' }}>
       <div 
         className={`collapsible-header ${!isExpanded ? 'collapsed' : ''}`}
         onClick={toggleExpanded}
@@ -42,19 +42,21 @@ const CollapsibleExpenseCategory = ({
       
       {isExpanded && (
         <div className="collapsible-content">
-          {expenseKeys.map(key => (
-            <ExpenseInput
-              key={key}
-              label={key}
-              value={expenses[key]}
-              onChange={(value) => onExpenseChange(key, value)}
-              isShared={['rent', 'apl', 'electricity', 'internet', 'insuranceHome', 'food', 'catFood'].includes(key)}
-              onSharedChange={(isShared) => onSharedChange(key, isShared)}
-              sharedValue={sharedExpenses[key]}
-              translations={translations}
-              currentLanguage={currentLanguage}
-              isApl={key === 'apl'}
-            />
+                    {expenseKeys.map(key => (
+            <div key={key} style={{ marginBottom: '1rem' }}>
+              <ExpenseInput
+                label={key}
+                value={expenses[key]}
+                onChange={(value) => onExpenseChange(key, value)}
+                isShared={['rent', 'apl', 'electricity', 'internet', 'insuranceHome', 'food', 'catFood'].includes(key)}
+                onSharedChange={(isShared) => onSharedChange(key, isShared)}
+                sharedValue={sharedExpenses[key]}
+                translations={translations}
+                currentLanguage={currentLanguage}
+                isApl={key === 'apl'}
+              />
+ 
+            </div>
           ))}
         </div>
       )}
