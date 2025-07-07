@@ -11,7 +11,7 @@ const CollapsibleExpenseCategory = ({
   translations, 
   currentLanguage 
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);

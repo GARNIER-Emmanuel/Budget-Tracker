@@ -38,7 +38,7 @@ code {
   z-index: 1000;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   border-bottom: 1px solid #e5e7eb;
-  padding: 1.25rem 0;
+  padding: 0.15rem 0;
   transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
@@ -53,15 +53,15 @@ code {
 }
 
 .header h1 {
-  font-size: 2rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #111827;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.05rem;
 }
 
 .header p {
   color: #6b7280;
-  font-size: 1rem;
+  font-size: 0.65rem;
 }
 
 .header-left {
@@ -410,7 +410,7 @@ code {
 }
 
 .summary-card.balance .label {
-  color: #1d4ed8;
+  color: #1d40af;
 }
 
 .summary-card.balance.negative .label {
@@ -472,9 +472,11 @@ code {
 }
 
 .chart-container {
-  height: 350px;
+  height: 420px;
+  min-height: 260px;
+  max-height: 60vh;
   position: relative;
-  overflow: hidden; /* Hide any scrollbars */
+  overflow: hidden;
 }
 
 /* Sticky column styling */
@@ -741,7 +743,7 @@ code {
   
   /* Header mobile optimization */
   .header {
-    padding: 0.75rem 0;
+    padding: 0.05rem 0;
   }
   
   .header-content {
@@ -752,12 +754,12 @@ code {
   }
   
   .header h1 {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
+    font-size: 1rem;
+    margin-bottom: 0.05rem;
   }
   
   .header p {
-    font-size: 0.875rem;
+    font-size: 0.65rem;
   }
   
   .header-left {
@@ -876,8 +878,9 @@ code {
   }
   
   .chart-container {
-    height: 400px;
-    padding: 0.75rem;
+    height: 260px;
+    min-height: 180px;
+    max-height: 40vh;
   }
   
   .chart-card h3 {
