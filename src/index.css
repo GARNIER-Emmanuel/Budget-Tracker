@@ -30,13 +30,16 @@ code {
 }
 
 .header {
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1.5rem 0;
-  position: sticky;
+  position: sticky !important;
   top: 0;
-  z-index: 100;
+  left: 0;
+  width: 100vw;
+  background: white;
+  z-index: 1000;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1.25rem 0;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
 .header-content {
@@ -738,8 +741,7 @@ code {
   
   /* Header mobile optimization */
   .header {
-    position: relative;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
   }
   
   .header-content {

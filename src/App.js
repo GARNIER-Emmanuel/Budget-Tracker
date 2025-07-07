@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { BudgetProvider, useBudget, BUDGET_ACTIONS } from './contexts/BudgetContext';
 import ExpenseInput from './components/ExpenseInput';
 import ExpenseSummary from './components/ExpenseSummary';
@@ -31,6 +31,27 @@ function AppContent() {
     savedBudgets,
     selectedMonth
   } = state;
+
+  const [showHeader, setShowHeader] = useState(true);
+  const lastScrollY = useRef(window.scrollY);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY < 50) {
+        setShowHeader(true);
+        lastScrollY.current = window.scrollY;
+        return;
+      }
+      if (window.scrollY > lastScrollY.current) {
+        setShowHeader(false); // scroll down
+      } else {
+        setShowHeader(true); // scroll up
+      }
+      lastScrollY.current = window.scrollY;
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Get previous month key
   const getPreviousMonthKey = (monthKey) => {
@@ -282,7 +303,7 @@ function AppContent() {
   return (
     <div>
       {/* Header */}
-      <header className="header">
+      <header className={`header${showHeader ? '' : ' header--hidden'}`}>
         <div className="header-content">
           <div className="header-left">
             <h1>{translations[currentLanguage].title}</h1>
