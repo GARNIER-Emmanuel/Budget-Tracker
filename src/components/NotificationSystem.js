@@ -14,7 +14,7 @@ const NotificationSystem = () => {
             payload: notification.id
           });
         }, notification.duration);
-      }
+      } 
       return null;
     });
 

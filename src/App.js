@@ -18,6 +18,9 @@ import { translations } from './translations';
 import CustomizableDashboard from './components/CustomizableDashboard';
 import BankStatementImporter from './components/BankStatementImporter';
 import './App.css';
+import Sidebar from './components/Sidebar';
+import RightSidebar from './components/RightSidebar';
+import Layout from './components/Layout';
 
 function AppContent() {
   const { state, dispatch } = useBudget();
@@ -38,6 +41,7 @@ function AppContent() {
   const lastScrollY = useRef(window.scrollY);
   const [incomeInput, setIncomeInput] = useState(String(income === 0 ? '' : income));
   const [autreArgentInput, setAutreArgentInput] = useState(String(autreArgentRecu === 0 ? '' : autreArgentRecu));
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -329,222 +333,40 @@ function AppContent() {
   }, []);
 
   return (
-    <div>
-      {/* Header */}
-      <header className={`header${showHeader ? '' : ' header--hidden'}`}>
-        <div className="header-content">
-          <div className="header-left">
-            <h1>{translations[currentLanguage].title}</h1>
-            <p>{translations[currentLanguage].subtitle}</p>
-          </div>
-          <div className="header-center">
-            <Navigation
-              currentPage={currentPage}
-              onPageChange={(page) => dispatch({ type: BUDGET_ACTIONS.SET_CURRENT_PAGE, payload: page })}
-              translations={translations}
-              currentLanguage={currentLanguage}
-            />
-          </div>
-          <div className="header-controls">
-            <DarkModeToggle
-              isDarkMode={isDarkMode}
-              onToggle={handleDarkModeToggle}
-              translations={translations}
-              currentLanguage={currentLanguage}
-            />
-            <LanguageSelector 
-              currentLanguage={currentLanguage}
-              onLanguageChange={(lang) => dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: lang })}
-              translations={translations}
-            />
-          </div>
-        </div>
-      </header>
-
-      <div className="container">
-        <div className="main-content">
+    <Layout
+      sidebarLeft={
+        <Sidebar
+          currentPage={currentPage}
+          onPageChange={(page) => dispatch({ type: BUDGET_ACTIONS.SET_CURRENT_PAGE, payload: page })}
+          currentLanguage={currentLanguage}
+          onLanguageChange={(lang) => dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: lang })}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={handleDarkModeToggle}
+          translations={translations}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+        />
+      }
+      main={
+        <div className="main-content" style={{ paddingBottom: '2rem' }}>
           {currentPage === 'tracker' && <BankStatementImporter />}
           {currentPage === 'tracker' ? (
             <>
-              <div className="grid">
-                {/* Left Column - Inputs */}
-                <div>
-                  {/* Month Selector */}
-                  <div className="card">
-                    <MonthSelector
-                      selectedMonth={selectedMonth}
-                      onMonthChange={handleMonthChange}
-                      savedBudgets={savedBudgets}
-                      translations={translations}
-                      currentLanguage={currentLanguage}
-                    />
-                  </div>
-
-                  {/* Income Input */}
-                  <div className="card">
-                    <h2>{translations[currentLanguage].monthlyIncome}</h2>
-                    <div className="input-wrapper">
-                      <span className="currency">€</span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={incomeInput}
-                        onChange={e => setIncomeInput(e.target.value)}
-                        onBlur={() => {
-                          const val = incomeInput.replace(',', '.');
-                          const num = Number(val);
-                          dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: isNaN(num) ? 0 : num });
-                          setIncomeInput(isNaN(num) || num === 0 ? '' : String(num));
-                        }}
-                        className="input-field"
-                        placeholder="0"
-                        style={{ fontSize: '1.125rem', fontWeight: '500' }}
-                      />
-                    </div>
-                    {/* Autre argent reçu */}
-                    <div className="input-wrapper" style={{ marginTop: '0.5rem' }}>
-                      <span className="currency">€</span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={autreArgentInput}
-                        onChange={e => setAutreArgentInput(e.target.value)}
-                        onBlur={() => {
-                          const val = autreArgentInput.replace(',', '.');
-                          const num = Number(val);
-                          dispatch({ type: 'UPDATE_AUTRE_ARGENT_RECU', payload: isNaN(num) ? 0 : num });
-                          setAutreArgentInput(isNaN(num) || num === 0 ? '' : String(num));
-                        }}
-                        className="input-field"
-                        placeholder="Autre argent reçu"
-                        style={{ fontSize: '1.125rem', fontWeight: '500' }}
-                      />
-                    </div>
-                    
-                    {/* Budget Action Buttons */}
-                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button 
-                          onClick={handleSaveBudget}
-                          className="save-button"
-                          style={{
-                            flex: 1,
-                            padding: '0.75rem 1rem',
-                            backgroundColor: '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.5rem',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = '#059669'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = '#10b981'}
-                        >
-                          💾 {translations[currentLanguage].saveBudget || 'Save Budget'}
-                        </button>
-                        <button 
-                          onClick={loadCurrentMonthData}
-                          className="load-button"
-                          style={{
-                            padding: '0.75rem 1rem',
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.5rem',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = '#2563eb'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = '#3b82f6'}
-                          title={translations[currentLanguage].loadCurrentMonth || 'Load current month data'}
-                        >
-                          🔄
-                        </button>
-                      </div>
-                      
-                      {/* PDF Download Button */}
-                      <PDFGenerator
-                        income={totalIncome}
-                        expenses={expenses}
-                        totalExpenses={totalExpenses}
-                        balance={balance}
-                        sharedExpenses={sharedExpenses}
-                        translations={translations}
-                        currentLanguage={currentLanguage}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Financial Goals */}
-                  <FinancialGoals
-                    translations={translations}
-                    currentLanguage={currentLanguage}
-                  />
-
-                  {/* Data Manager */}
-                  <DataManager
-                    translations={translations}
-                    currentLanguage={currentLanguage}
-                  />
-
-                  {/* Expense Inputs */}
-                  <div style={{ marginTop: '2rem' }}>
-                    {Object.entries(expenseCategories).map(([category, expenseKeys], index) => (
-                      <div key={category} style={{ marginBottom: index < Object.keys(expenseCategories).length - 1 ? '2rem' : '0' }}>
-                        <CollapsibleExpenseCategory
-                          category={category}
-                          expenseKeys={expenseKeys}
-                          expenses={expenses}
-                          onExpenseChange={handleExpenseChange}
-                          sharedExpenses={sharedExpenses}
-                          onSharedChange={handleSharedChange}
-                          translations={translations}
-                          currentLanguage={currentLanguage}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right Column - Summary and Charts */}
-                <div>
-                  {/* Summary */}
-                  <ExpenseSummary 
-                    totalExpenses={totalExpenses}
-                    balance={balance}
-                    income={totalIncome}
-                    translations={translations}
-                    currentLanguage={currentLanguage}
-                  />
-
-                  {/* Charts */}
-                  <ExpenseCharts 
-                    expenses={expenses}
-                    balance={balance}
-                    translations={translations}
-                    currentLanguage={currentLanguage}
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-              </div>
-
-              {/* Shared Expenses Info */}
-              <div className="info-box">
-                <div className="info-content">
-                  <svg className="info-icon" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <div>
-                    <h3>{translations[currentLanguage].sharedExpensesInfo}</h3>
-                    <p>
-                      {translations[currentLanguage].sharedExpensesDescription}
-                    </p>
-                  </div>
-                </div>
+              <div className="tracker-fullwidth">
+                <ExpenseSummary 
+                  totalExpenses={totalExpenses}
+                  balance={balance}
+                  income={totalIncome}
+                  translations={translations}
+                  currentLanguage={currentLanguage}
+                />
+                <ExpenseCharts 
+                  expenses={expenses}
+                  balance={balance}
+                  translations={translations}
+                  currentLanguage={currentLanguage}
+                  isDarkMode={isDarkMode}
+                />
               </div>
             </>
           ) : currentPage === 'comparison' ? (
@@ -554,25 +376,97 @@ function AppContent() {
               savedBudgets={savedBudgets}
               isDarkMode={isDarkMode}
             />
-          ) : currentPage === 'dashboard' ? (
+          ) : (
             <CustomizableDashboard
               translations={translations}
               currentLanguage={currentLanguage}
               isDarkMode={isDarkMode}
             />
-          ) : null}
+          )}
+          <NotificationSystem />
         </div>
-      </div>
-
-      {/* Footer */}
-      <Footer 
-        translations={translations}
-        currentLanguage={currentLanguage}
-      />
-      
-      {/* Notification System */}
-      <NotificationSystem />
-    </div>
+      }
+      sidebarRight={
+        <RightSidebar title="Outils" collapsed={false}>
+          {/* Sélecteur de mois */}
+          <section className="rsb-section rsb-month-section">
+            <MonthSelector
+              selectedMonth={selectedMonth}
+              onMonthChange={handleMonthChange}
+              savedBudgets={savedBudgets}
+              translations={translations}
+              currentLanguage={currentLanguage}
+            />
+          </section>
+          {/* Entrées de revenus */}
+          <section className="rsb-section rsb-income-section">
+            <div className="rsb-section-title">{translations[currentLanguage].monthlyIncome}</div>
+            <div className="rsb-input-row">
+              <span className="currency">€</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={incomeInput}
+                onChange={e => setIncomeInput(e.target.value)}
+                onBlur={() => {
+                  const val = incomeInput.replace(',', '.');
+                  const num = Number(val);
+                  dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: isNaN(num) ? 0 : num });
+                  setIncomeInput(isNaN(num) || num === 0 ? '' : String(num));
+                }}
+                className="rsb-input"
+                placeholder="0"
+              />
+            </div>
+            <div className="rsb-input-row" style={{ marginTop: '0.5rem' }}>
+              <span className="currency">€</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={autreArgentInput}
+                onChange={e => setAutreArgentInput(e.target.value)}
+                onBlur={() => {
+                  const val = autreArgentInput.replace(',', '.');
+                  const num = Number(val);
+                  dispatch({ type: 'UPDATE_AUTRE_ARGENT_RECU', payload: isNaN(num) ? 0 : num });
+                  setAutreArgentInput(isNaN(num) || num === 0 ? '' : String(num));
+                }}
+                className="rsb-input"
+                placeholder={translations[currentLanguage].otherIncome || 'Autre argent reçu'}
+              />
+            </div>
+          </section>
+          {/* Objectifs financiers */}
+          <FinancialGoals
+            translations={translations}
+            currentLanguage={currentLanguage}
+          />
+          {/* Data Manager */}
+          <DataManager
+            translations={translations}
+            currentLanguage={currentLanguage}
+          />
+          {/* Expense Inputs */}
+          <div style={{ marginTop: '2rem' }}>
+            {Object.entries(expenseCategories).map(([category, expenseKeys], index) => (
+              <div key={category} style={{ marginBottom: index < Object.keys(expenseCategories).length - 1 ? '2rem' : '0' }}>
+                <CollapsibleExpenseCategory
+                  category={category}
+                  expenseKeys={expenseKeys}
+                  expenses={expenses}
+                  onExpenseChange={handleExpenseChange}
+                  sharedExpenses={sharedExpenses}
+                  onSharedChange={handleSharedChange}
+                  translations={translations}
+                  currentLanguage={currentLanguage}
+                />
+              </div>
+            ))}
+          </div>
+        </RightSidebar>
+      }
+      className={sidebarCollapsed ? 'sidebar-collapsed' : ''}
+    />
   );
 }
 

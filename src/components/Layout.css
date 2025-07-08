@@ -1,0 +1,201 @@
+.layout-root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: #f3f4f6;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  display: flex;
+  flex-direction: row;
+}
+
+/* Supprime la sidebar gauche */
+.layout-sidebar-left {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 280px;
+  height: 100vh;
+  background: none !important;
+  color: #fff;
+  box-shadow: 4px 0 24px rgba(31,41,55,0.10);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+}
+
+.layout-root.sidebar-collapsed .layout-sidebar-left {
+  width: 70px;
+}
+
+/* Sidebar droite : fixe à droite, scrollable indépendamment */
+.layout-sidebar-right {
+  background: none !important;
+  color: #e0e7ff;
+  /* box-shadow: -2px 0 12px rgba(31,41,55,0.10); */
+  box-shadow: none !important;
+  padding: 2rem 1.2rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  overflow-y: auto;
+  min-height: 0;
+  z-index: 100;
+  /* border-radius: 1.5rem 0 0 1.5rem; */
+  border-radius: 0 !important;
+  border: none !important;
+  position: relative;
+  right: unset;
+  top: unset;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  height: 100vh;
+  background: linear-gradient(160deg, #2563eb 0%, #1e3a8a 100%) !important;
+  color: #e0e7ff;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  overflow-y: auto;
+  min-height: 0;
+  z-index: 100;
+  padding: 2rem 1.2rem 1.2rem 1.2rem;
+}
+
+.layout-main-area {
+  margin-left: 0;
+  margin-right: 0;
+  height: 100vh;
+  width: 100%;
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1), width 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.tracker-fullwidth {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.tracker-fullwidth > * {
+  width: 100%;
+  max-width: none;
+  margin: 0 0 2rem 0;
+  display: block;
+}
+
+.layout-root.sidebar-collapsed .layout-main-area {
+  margin-left: 0;
+  transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1), width 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.layout-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  color: #1f2937;
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  padding: 1.2rem 2.5rem 1.2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+}
+
+.layout-content-row {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-width: 0;
+  min-height: 0;
+  height: 1px;
+  /* Ajout pour forcer le main à prendre tout l'espace */
+  width: 100%;
+}
+
+.layout-main-content {
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  padding: 2.5rem 0 1.5rem 2.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  /* Ajout pour centrer et occuper tout l'espace */
+  justify-content: flex-start;
+  align-items: stretch;
+}
+
+.layout-footer {
+  text-align: center;
+  color: #6b7280;
+  background: transparent;
+  font-size: 0.95rem;
+  padding: 1.5rem 0 0.5rem 0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+  .layout-sidebar-right {
+    width: 220px;
+    padding: 1.2rem 0.5rem 1rem 0.5rem;
+  }
+  .layout-main-area {
+    margin-left: 0 !important;
+    width: calc(100vw - 220px) !important;
+  }
+  .layout-root.sidebar-collapsed .layout-main-area {
+    margin-left: 0 !important;
+    width: calc(100vw - 220px) !important;
+  }
+  .layout-main-content {
+    padding: 1.2rem 1.2rem 1rem 1.2rem;
+  }
+  .layout-header {
+    padding: 1.2rem 1.2rem 1.2rem 1.2rem;
+  }
+}
+@media (max-width: 900px) {
+  .layout-main-area {
+    margin-left: 0 !important;
+    width: 100vw !important;
+  }
+  .layout-root.sidebar-collapsed .layout-main-area {
+    margin-left: 0 !important;
+    width: 100vw !important;
+  }
+  .layout-content-row {
+    flex-direction: column;
+    height: auto;
+    width: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .layout-main-content {
+    padding: 0.5rem 0.1rem;
+  }
+  .layout-header {
+    padding: 0.7rem 0.2rem;
+    min-height: 48px;
+  }
+} 
