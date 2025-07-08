@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useBudget, BUDGET_ACTIONS } from '../contexts/BudgetContext';
 import { FaFileImport } from 'react-icons/fa';
+import { translations } from '../translations';
 
 // Liste des catégories disponibles (à adapter si besoin)
 const CATEGORY_OPTIONS = [
@@ -71,6 +72,8 @@ const BankStatementImporter = () => {
   const [step, setStep] = useState('import');
   const [importError, setImportError] = useState('');
   const fileInputRef = React.useRef();
+  const currentLanguage = state?.currentLanguage || 'fr';
+  const t = translations[currentLanguage] || {};
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -165,37 +168,35 @@ const BankStatementImporter = () => {
   };
 
   return (
-    <div className="bank-importer-card" style={{ background: '#f8fafc', padding: '2rem', borderRadius: '1rem', margin: '2rem 0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <FaFileImport style={{ color: '#2563eb', fontSize: 22 }} /> Import de relevé bancaire
-      </h3>
-      <p style={{ color: '#64748b', fontSize: '0.95rem', margin: '0.5rem 0 1.5rem 0' }}>
-        Importez un fichier CSV avec les colonnes <b>Date, Libellé, Montant</b>.<br />
-        Vous pourrez ensuite catégoriser chaque opération avant de l'ajouter à votre budget.
-      </p>
-      {step === 'import' && (
-        <>
+    <div className="tracker-root" style={{ maxWidth: 700, margin: '0 auto', padding: '2rem 1rem' }}>
+      <header style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>{t.trackerTitle || 'Suivi mensuel'}</h1>
+        <p style={{ color: '#64748b', marginTop: 8 }}>{t.trackerDesc || 'Importez vos relevés, saisissez vos dépenses et suivez votre budget en temps réel.'}</p>
+      </header>
+      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24, marginBottom: 32 }}>
+        <h2 style={{ fontSize: '1.2rem', color: '#2563eb', marginBottom: 12 }}>{t.importSection || 'Import de relevé bancaire'}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <FaFileImport style={{ color: '#2563eb', fontSize: 22 }} />
           <button
             style={{
               background: '#2563eb', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 600, fontSize: '1rem', padding: '0.75rem 2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 1px 4px rgba(37,99,235,0.08)' 
             }}
             onClick={() => fileInputRef.current && fileInputRef.current.click()}
           >
-            <FaFileImport style={{ fontSize: 18 }} /> Importer un fichier
+            <FaFileImport style={{ fontSize: 18 }} /> {t.importFileButton || 'Importer un fichier'}
           </button>
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFile} style={{ display: 'none' }} />
-          {importError && <div style={{ color: 'red', marginTop: '1rem' }}>{importError}</div>}
-        </>
-      )}
-      {step === 'categorize' && (
+        </div>
+        {importError && <div style={{ color: 'red', marginTop: '1rem' }}>{importError}</div>}
+        <div style={{ color: '#64748b', fontSize: 15, marginBottom: 12 }}>{t.importHelp || 'Importez un fichier CSV avec les colonnes Date, Libellé, Montant.'}</div>
         <div style={{ overflowX: 'auto', marginTop: '1.5rem' }}>
           <table style={{ width: '100%', minWidth: 600, borderCollapse: 'collapse', background: 'white', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
             <thead style={{ background: '#f1f5f9' }}>
               <tr>
-                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>Date</th>
-                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>Libellé</th>
-                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>Montant</th>
-                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>Catégorie</th>
+                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>{t.importDateHeader || 'Date'}</th>
+                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>{t.importLabelHeader || 'Libellé'}</th>
+                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>{t.importAmountHeader || 'Montant'}</th>
+                <th style={{ padding: '0.5rem', fontWeight: 600, color: '#374151', fontSize: '1rem' }}>{t.importCategoryHeader || 'Catégorie'}</th>
               </tr>
             </thead>
             <tbody>
@@ -207,7 +208,7 @@ const BankStatementImporter = () => {
                     {tx.amount}
                     <button
                       style={{ marginLeft: 8, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'pointer', fontSize: '0.9rem', padding: '0.1rem 0.5rem' }}
-                      title="Inverser débit/crédit"
+                      title={t.importToggleAmount || 'Inverser débit/crédit'}
                       onClick={() => setTransactions(txs => txs.map((t, i) => i === idx ? { ...t, amount: -t.amount } : t))}
                     >
                       ↔️
@@ -225,15 +226,18 @@ const BankStatementImporter = () => {
             </tbody>
           </table>
           <button style={{ marginTop: '2rem', padding: '0.9rem 2.5rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 600, fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 1px 4px rgba(16,185,129,0.08)' }} onClick={handleValidate}>
-            Valider et répartir
+            {t.importValidateButton || 'Valider et répartir'}
           </button>
         </div>
-      )}
-      {step === 'done' && (
-        <div style={{ color: '#059669', fontWeight: 600, marginTop: '1.5rem', fontSize: '1.1rem' }}>
-          ✅ Transactions importées et réparties dans le budget !
-        </div>
-      )}
+      </section>
+      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24, marginBottom: 32 }}>
+        <h2 style={{ fontSize: '1.2rem', color: '#10b981', marginBottom: 12 }}>{t.quickEntry || 'Saisie rapide'}</h2>
+        {/* ... inputs de revenus/dépenses ... */}
+      </section>
+      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24 }}>
+        <h2 style={{ fontSize: '1.2rem', color: '#f59e42', marginBottom: 12 }}>{t.monthSummary || 'Résumé du mois'}</h2>
+        {/* ... résumé du mois (solde, dépenses, revenus) ... */}
+      </section>
     </div>
   );
 };

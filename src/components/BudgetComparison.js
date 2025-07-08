@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import BudgetDetailsModal from './BudgetDetailsModal';
 import { useBudget, BUDGET_ACTIONS } from '../contexts/BudgetContext';
+import { translations } from '../translations';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,7 +14,6 @@ import {
   Legend,
 } from 'chart.js';
 
-// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -24,8 +24,10 @@ ChartJS.register(
   Legend
 );
 
-const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkMode = false }) => {
-  const { dispatch } = useBudget();
+const BudgetComparison = (props) => {
+  const { state } = useBudget();
+  const currentLanguage = state?.currentLanguage || 'fr';
+  const t = translations[currentLanguage] || {};
   const [analysis, setAnalysis] = useState(null);
   const [detailedComparison, setDetailedComparison] = useState(null);
   const [selectedBudgets, setSelectedBudgets] = useState([]);
@@ -36,7 +38,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
   // Analyze budgets when savedBudgets changes
   useEffect(() => {
     // Clean up and recalculate budgets
-    const updatedBudgets = savedBudgets.map(budget => {
+    const updatedBudgets = state.savedBudgets.map(budget => {
       if (!budget || !budget.expenses || !budget.sharedExpenses) {
         return budget;
       }
@@ -79,11 +81,11 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
     );
 
     // Update budgets if values changed
-    if (JSON.stringify(updatedBudgets) !== JSON.stringify(savedBudgets)) {
+    if (JSON.stringify(updatedBudgets) !== JSON.stringify(state.savedBudgets)) {
       console.log('Updating budgets with recalculated values...');
       // Update each budget individually through the context
       updatedBudgets.forEach(budget => {
-        dispatch({ type: BUDGET_ACTIONS.SAVE_BUDGET, payload: budget });
+        state.dispatch({ type: BUDGET_ACTIONS.SAVE_BUDGET, payload: budget });
       });
       return;
     }
@@ -95,7 +97,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
       setAnalysis(null);
       setDetailedComparison(null);
     }
-  }, [savedBudgets]);
+  }, [state.savedBudgets]);
 
   // Responsive toggle for saved budgets
   useEffect(() => {
@@ -231,7 +233,7 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
   };
 
   const removeBudget = (id) => {
-    dispatch({ type: BUDGET_ACTIONS.DELETE_BUDGET, payload: id });
+    state.dispatch({ type: BUDGET_ACTIONS.DELETE_BUDGET, payload: id });
   };
 
   const showBudgetDetails = (budget) => {
@@ -245,10 +247,10 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
   };
 
   const prepareChartData = () => {
-    if (savedBudgets.length === 0) return null;
+    if (state.savedBudgets.length === 0) return null;
 
     // Filter out invalid budgets for charts
-    const validBudgets = savedBudgets.filter(budget => 
+    const validBudgets = state.savedBudgets.filter(budget => 
       typeof budget.totalExpenses === 'number' && 
       !isNaN(budget.totalExpenses) &&
       typeof budget.balance === 'number' && 
@@ -266,21 +268,21 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
       labels: sortedBudgets.map(b => b.name),
       datasets: [
         {
-          label: translations[currentLanguage]?.income || 'Income',
+          label: t.income || 'Income',
           data: sortedBudgets.map(b => b.income),
           borderColor: '#10b981',
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
           tension: 0.1
         },
         {
-          label: translations[currentLanguage]?.totalExpenses || 'Total Expenses',
+          label: t.totalExpenses || 'Total Expenses',
           data: sortedBudgets.map(b => b.totalExpenses),
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239, 68, 68, 0.1)',
           tension: 0.1
         },
         {
-          label: translations[currentLanguage]?.balance || 'Balance',
+          label: t.balance || 'Balance',
           data: sortedBudgets.map(b => b.balance),
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -296,15 +298,15 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
       legend: { 
         position: isLineChart ? 'top' : 'bottom',
         labels: {
-          color: isDarkMode ? '#f9fafb' : '#374151',
+          color: '#374151',
         }
       },
       title: { display: false },
       tooltip: {
-        backgroundColor: isDarkMode ? '#374151' : '#ffffff',
-        titleColor: isDarkMode ? '#f9fafb' : '#374151',
-        bodyColor: isDarkMode ? '#f9fafb' : '#374151',
-        borderColor: isDarkMode ? '#4b5563' : '#e5e7eb',
+        backgroundColor: '#ffffff',
+        titleColor: '#374151',
+        bodyColor: '#374151',
+        borderColor: '#e5e7eb',
         borderWidth: 1,
       }
     },
@@ -312,18 +314,18 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
       y: { 
         beginAtZero: true,
         ticks: {
-          color: isDarkMode ? '#f9fafb' : '#374151',
+          color: '#374151',
         },
         grid: {
-          color: isDarkMode ? '#374151' : '#e5e7eb',
+          color: '#e5e7eb',
         }
       },
       x: {
         ticks: {
-          color: isDarkMode ? '#f9fafb' : '#374151',
+          color: '#374151',
         },
         grid: {
-          color: isDarkMode ? '#374151' : '#e5e7eb',
+          color: '#e5e7eb',
         }
       }
     } : undefined
@@ -332,234 +334,223 @@ const BudgetComparison = ({ translations, currentLanguage, savedBudgets, isDarkM
   const chartData = prepareChartData();
 
   return (
-    <div className="budget-comparison">
-      <div className="comparison-header">
-        <h2>{translations[currentLanguage]?.budgetComparison || 'Budget Comparison'}</h2>
-        <p>{translations[currentLanguage]?.comparisonDescription || 'Analyze your saved budgets and track your financial evolution'}</p>
-      </div>
+    <div className="comparison-root" style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1rem' }}>
+      <header style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>{t.comparisonTitle || 'Comparaison des budgets'}</h1>
+        <p style={{ color: '#64748b', marginTop: 8 }}>{t.comparisonDesc || 'Comparez vos budgets sauvegardés et visualisez votre évolution financière.'}</p>
+      </header>
+      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24, marginBottom: 32 }}>
+        <h2 style={{ fontSize: '1.2rem', color: '#2563eb', marginBottom: 12 }}>{t.comparisonCharts || 'Évolution graphique'}</h2>
+        {chartData && <Line data={chartData} options={getChartOptions(true)} />}
+      </section>
+      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24, marginBottom: 32 }}>
+        <h2 style={{ fontSize: '1.2rem', color: '#10b981', marginBottom: 12 }}>{t.comparisonBudgets || 'Liste des budgets sauvegardés'}</h2>
+        {/* Toggle button for mobile */}
+        {window.innerWidth < 768 && (
+          <button
+            className="toggle-budgets-button"
+            style={{
+              margin: '0 auto 1rem auto',
+              display: 'block',
+              padding: '0.75rem 1.25rem',
+              background: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              fontSize: '1rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              width: '100%',
+              maxWidth: 400,
+            }}
+            onClick={() => setShowBudgetsMobile((v) => !v)}
+          >
+            {showBudgetsMobile
+              ? (t.hideSavedBudgets || 'Cacher les budgets sauvegardés')
+              : (t.showSavedBudgets || 'Afficher les budgets sauvegardés')}
+          </button>
+        )}
 
-      {/* Toggle button for mobile */}
-      {window.innerWidth < 768 && (
-        <button
-          className="toggle-budgets-button"
-          style={{
-            margin: '0 auto 1rem auto',
-            display: 'block',
-            padding: '0.75rem 1.25rem',
-            background: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.5rem',
-            fontSize: '1rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            width: '100%',
-            maxWidth: 400,
-          }}
-          onClick={() => setShowBudgetsMobile((v) => !v)}
-        >
-          {showBudgetsMobile
-            ? (translations[currentLanguage]?.hideSavedBudgets || 'Cacher les budgets sauvegardés')
-            : (translations[currentLanguage]?.showSavedBudgets || 'Afficher les budgets sauvegardés')}
-        </button>
-      )}
-
-      {savedBudgets.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📊</div>
-          <h3>{translations[currentLanguage]?.noBudgets || 'No saved budgets yet'}</h3>
-          <p>{translations[currentLanguage]?.saveFirstBudget || 'Save your first budget in the tracker page to start comparing'}</p>
-        </div>
-      ) : (
-        <>
-          {/* Saved Budgets List */}
-          {(showBudgetsMobile || window.innerWidth >= 768) && (
-            <div className="saved-budgets-section">
-              <h3>{translations[currentLanguage]?.savedBudgets || 'Saved Budgets'}</h3>
-              <div className="budgets-grid">
-                {[...savedBudgets].sort((a, b) => new Date(a.date) - new Date(b.date)).map((budget, index) => {
-                  // Calculate and validate values for display
-                  const income = typeof budget.income === 'number' && !isNaN(budget.income) ? budget.income : 0;
-                  
-                  // Calculate total expenses with shared cost adjustment and APL reduction
-                  const totalExpenses = budget.expenses && budget.sharedExpenses ? 
-                    Object.entries(budget.expenses).reduce((total, [key, value]) => {
-                      const isShared = budget.sharedExpenses[key];
-                      const numValue = typeof value === 'number' && !isNaN(value) ? value : 0;
-                      
-                      // Special handling for APL (housing allowance)
-                      if (key === 'apl') {
-                        const aplReduction = isShared ? numValue / 2 : numValue;
-                        return total - aplReduction;
-                      }
-                      
-                      // If shared, divide by 2 (assuming equal split)
-                      const adjustedValue = isShared ? numValue / 2 : numValue;
-                      return total + adjustedValue;
-                    }, 0) : (budget.totalExpenses || 0);
-                  
-                  const balance = income - totalExpenses;
-                  
-                  return (
-                    <div key={budget.id} className="budget-card">
-                      <div className="budget-header">
-                        <h4>{budget.name}</h4>
-                        <div className="budget-actions">
-                          <button 
-                            onClick={() => showBudgetDetails(budget)}
-                            className="details-button"
-                            title={translations[currentLanguage]?.viewDetails || 'View details'}
-                          >
-                            👁️
-                          </button>
-                          <button 
-                            onClick={() => removeBudget(budget.id)}
-                            className="remove-button"
-                            title={translations[currentLanguage]?.removeBudget || 'Remove budget'}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </div>
-                                          <div className="budget-summary">
-                      <div className="budget-item">
-                        <span>{translations[currentLanguage]?.income || 'Income'}:</span>
-                        <span className="amount income">€{income.toFixed(2)}</span>
-                      </div>
-                      <div className="budget-item">
-                        <span>{translations[currentLanguage]?.totalExpenses || 'Expenses'}:</span>
-                        <span className="amount expense">€{totalExpenses.toFixed(2)}</span>
-                      </div>
-                      <div className="budget-item">
-                        <span>{translations[currentLanguage]?.balance || 'Balance'}:</span>
-                        <span className={`amount ${balance >= 0 ? 'positive' : 'negative'}`}>
-                          €{balance.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+        {state.savedBudgets.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📊</div>
+            <h3>{t.noBudgets || 'No saved budgets yet'}</h3>
+            <p>{t.saveFirstBudget || 'Save your first budget in the tracker page to start comparing'}</p>
+          </div>
+        ) : (
+          <>
+            {/* Saved Budgets List */}
+            {(showBudgetsMobile || window.innerWidth >= 768) && (
+              <div className="saved-budgets-section">
+                <h3>{t.savedBudgets || 'Saved Budgets'}</h3>
+                <div className="budgets-grid">
+                  {[...state.savedBudgets].sort((a, b) => new Date(a.date) - new Date(b.date)).map((budget, index) => {
+                    // Calculate and validate values for display
+                    const income = typeof budget.income === 'number' && !isNaN(budget.income) ? budget.income : 0;
                     
-                    {/* Financial Goals Status */}
-                    {budget.goalAchievements && (
-                      <div className="budget-goals">
-                        <h5>{translations[currentLanguage]?.financialGoals || 'Financial Goals'}</h5>
-                        <div className="goals-status">
-                          <div className="goal-status-item">
-                            <span className="goal-label">{translations[currentLanguage]?.monthlySavingsGoal || 'Savings'}:</span>
-                            <span className={`goal-status ${budget.goalAchievements.monthlySavings.achieved ? 'achieved' : 'not-achieved'}`}>
-                              {budget.goalAchievements.monthlySavings.achieved ? '✅' : '❌'}
-                            </span>
+                    // Calculate total expenses with shared cost adjustment and APL reduction
+                    const totalExpenses = budget.expenses && budget.sharedExpenses ? 
+                      Object.entries(budget.expenses).reduce((total, [key, value]) => {
+                        const isShared = budget.sharedExpenses[key];
+                        const numValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+                        
+                        // Special handling for APL (housing allowance)
+                        if (key === 'apl') {
+                          const aplReduction = isShared ? numValue / 2 : numValue;
+                          return total - aplReduction;
+                        }
+                        
+                        // If shared, divide by 2 (assuming equal split)
+                        const adjustedValue = isShared ? numValue / 2 : numValue;
+                        return total + adjustedValue;
+                      }, 0) : (budget.totalExpenses || 0);
+                    
+                    const balance = income - totalExpenses;
+                    
+                    return (
+                      <div key={budget.id} className="budget-card">
+                        <div className="budget-header">
+                          <h4>{budget.name}</h4>
+                          <div className="budget-actions">
+                            <button 
+                              onClick={() => showBudgetDetails(budget)}
+                              className="details-button"
+                              title={t.viewDetails || 'View details'}
+                            >
+                              👁️
+                            </button>
+                            <button 
+                              onClick={() => removeBudget(budget.id)}
+                              className="remove-button"
+                              title={t.removeBudget || 'Remove budget'}
+                            >
+                              ×
+                            </button>
                           </div>
-                          <div className="goal-status-item">
-                            <span className="goal-label">{translations[currentLanguage]?.leisureSpendingLimit || 'Leisure'}:</span>
-                            <span className={`goal-status ${budget.goalAchievements.maxLeisureSpending.achieved ? 'achieved' : 'not-achieved'}`}>
-                              {budget.goalAchievements.maxLeisureSpending.achieved ? '✅' : '❌'}
-                            </span>
+                        </div>
+                        <div className="budget-summary">
+                          <div className="budget-item">
+                            <span>{t.income || 'Income'}:</span>
+                            <span className="amount income">€{income.toFixed(2)}</span>
                           </div>
-                          <div className="goal-status-item">
-                            <span className="goal-label">{translations[currentLanguage]?.emergencyFund || 'Emergency'}:</span>
-                            <span className={`goal-status ${budget.goalAchievements.emergencyFundTarget.achieved ? 'achieved' : 'not-achieved'}`}>
-                              {budget.goalAchievements.emergencyFundTarget.achieved ? '✅' : '❌'}
+                          <div className="budget-item">
+                            <span>{t.totalExpenses || 'Expenses'}:</span>
+                            <span className="amount expense">€{totalExpenses.toFixed(2)}</span>
+                          </div>
+                          <div className="budget-item">
+                            <span>{t.balance || 'Balance'}:</span>
+                            <span className={`amount ${balance >= 0 ? 'positive' : 'negative'}`}>
+                              €{balance.toFixed(2)}
                             </span>
                           </div>
                         </div>
+                        
+                        {/* Financial Goals Status */}
+                        {budget.goalAchievements && (
+                          <div className="budget-goals">
+                            <h5>{t.financialGoals || 'Financial Goals'}</h5>
+                            <div className="goals-status">
+                              <div className="goal-status-item">
+                                <span className="goal-label">{t.monthlySavingsGoal || 'Savings'}:</span>
+                                <span className={`goal-status ${budget.goalAchievements.monthlySavings.achieved ? 'achieved' : 'not-achieved'}`}>
+                                  {budget.goalAchievements.monthlySavings.achieved ? '✅' : '❌'}
+                                </span>
+                              </div>
+                              <div className="goal-status-item">
+                                <span className="goal-label">{t.leisureSpendingLimit || 'Leisure'}:</span>
+                                <span className={`goal-status ${budget.goalAchievements.maxLeisureSpending.achieved ? 'achieved' : 'not-achieved'}`}>
+                                  {budget.goalAchievements.maxLeisureSpending.achieved ? '✅' : '❌'}
+                                </span>
+                              </div>
+                              <div className="goal-status-item">
+                                <span className="goal-label">{t.emergencyFund || 'Emergency'}:</span>
+                                <span className={`goal-status ${budget.goalAchievements.emergencyFundTarget.achieved ? 'achieved' : 'not-achieved'}`}>
+                                  {budget.goalAchievements.emergencyFundTarget.achieved ? '✅' : '❌'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-
-          {savedBudgets.filter(budget => 
-            typeof budget.totalExpenses === 'number' && 
-            !isNaN(budget.totalExpenses) &&
-            typeof budget.balance === 'number' && 
-            !isNaN(budget.balance) &&
-            typeof budget.income === 'number' && 
-            !isNaN(budget.income)
-          ).length >= 2 && (
-            <>
-              {/* Charts */}
-              <div className="charts-section" style={{ marginBottom: '2rem' }}>
-                <div className="chart-container">
-                  <h3>{translations[currentLanguage]?.evolutionChart || 'Budget Evolution'}</h3>
-                  {chartData && <Line data={chartData} options={getChartOptions(true)} />}
+            )}
+          </>
+        )}
+      </section>
+      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24 }}>
+        <h2 style={{ fontSize: '1.2rem', color: '#f59e42', marginBottom: 12 }}>{t.comparisonTips || 'Conseils IA & alertes'}</h2>
+        {/* Analysis */}
+        {analysis && (
+          <div className="analysis-section">
+            <h3>{t.analysis || 'Analysis'}</h3>
+            <div className="analysis-grid">
+              <div className="analysis-card">
+                <h4>{t.overview || 'Overview'}</h4>
+                <div className="analysis-item">
+                  <span>{t.totalBudgets || 'Total budgets'}:</span>
+                  <span>{analysis.totalBudgets}</span>
+                </div>
+                <div className="analysis-item">
+                  <span>{t.period || 'Period'}:</span>
+                  <span>{analysis.dateRange.start} - {analysis.dateRange.end}</span>
+                </div>
+                <div className="analysis-item">
+                  <span>{t.averageIncome || 'Average income'}:</span>
+                  <span>€{analysis.averageIncome.toFixed(0)}</span>
+                </div>
+                <div className="analysis-item">
+                  <span>{t.averageExpenses || 'Average expenses'}:</span>
+                  <span>€{analysis.averageExpenses.toFixed(0)}</span>
+                </div>
+                <div className="analysis-item">
+                  <span>{t.totalSavings || 'Total savings'}:</span>
+                  <span className={analysis.totalSavings >= 0 ? 'positive' : 'negative'}>
+                    €{analysis.totalSavings.toFixed(0)}
+                  </span>
                 </div>
               </div>
 
-              {/* Analysis */}
-              {analysis && (
-                <div className="analysis-section">
-                  <h3>{translations[currentLanguage]?.analysis || 'Analysis'}</h3>
-                  <div className="analysis-grid">
-                    <div className="analysis-card">
-                      <h4>{translations[currentLanguage]?.overview || 'Overview'}</h4>
-                      <div className="analysis-item">
-                        <span>{translations[currentLanguage]?.totalBudgets || 'Total budgets'}:</span>
-                        <span>{analysis.totalBudgets}</span>
-                      </div>
-                      <div className="analysis-item">
-                        <span>{translations[currentLanguage]?.period || 'Period'}:</span>
-                        <span>{analysis.dateRange.start} - {analysis.dateRange.end}</span>
-                      </div>
-                      <div className="analysis-item">
-                        <span>{translations[currentLanguage]?.averageIncome || 'Average income'}:</span>
-                        <span>€{analysis.averageIncome.toFixed(0)}</span>
-                      </div>
-                      <div className="analysis-item">
-                        <span>{translations[currentLanguage]?.averageExpenses || 'Average expenses'}:</span>
-                        <span>€{analysis.averageExpenses.toFixed(0)}</span>
-                      </div>
-                      <div className="analysis-item">
-                        <span>{translations[currentLanguage]?.totalSavings || 'Total savings'}:</span>
-                        <span className={analysis.totalSavings >= 0 ? 'positive' : 'negative'}>
-                          €{analysis.totalSavings.toFixed(0)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {detailedComparison && (
-                      <div className="analysis-card">
-                        <h4>{translations[currentLanguage]?.trends || 'Trends'}</h4>
-                        <div className="trend-item">
-                          <span>{translations[currentLanguage]?.income || 'Income'}:</span>
-                          <span className={`trend ${detailedComparison.trends.income.trend}`}>
-                            {detailedComparison.trends.income.change > 0 ? '+' : ''}{detailedComparison.trends.income.change.toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="trend-item">
-                          <span>{translations[currentLanguage]?.expenses || 'Expenses'}:</span>
-                          <span className={`trend ${detailedComparison.trends.expenses.trend}`}>
-                            {detailedComparison.trends.expenses.change > 0 ? '+' : ''}{detailedComparison.trends.expenses.change.toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="trend-item">
-                          <span>{translations[currentLanguage]?.balance || 'Balance'}:</span>
-                          <span className={`trend ${detailedComparison.trends.balance.trend}`}>
-                            {detailedComparison.trends.balance.change > 0 ? '+' : ''}{detailedComparison.trends.balance.change.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    )}
+              {detailedComparison && (
+                <div className="analysis-card">
+                  <h4>{t.trends || 'Trends'}</h4>
+                  <div className="trend-item">
+                    <span>{t.income || 'Income'}:</span>
+                    <span className={`trend ${detailedComparison.trends.income.trend}`}>
+                      {detailedComparison.trends.income.change > 0 ? '+' : ''}{detailedComparison.trends.income.change.toFixed(1)}%
+                    </span>
                   </div>
-
-                  {detailedComparison?.recommendations?.length > 0 && (
-                    <div className="recommendations">
-                      <h4>{translations[currentLanguage]?.recommendations || 'Recommendations'}</h4>
-                      <ul>
-                        {detailedComparison.recommendations.map((rec, index) => (
-                          <li key={index}>{rec}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="trend-item">
+                    <span>{t.expenses || 'Expenses'}:</span>
+                    <span className={`trend ${detailedComparison.trends.expenses.trend}`}>
+                      {detailedComparison.trends.expenses.change > 0 ? '+' : ''}{detailedComparison.trends.expenses.change.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="trend-item">
+                    <span>{t.balance || 'Balance'}:</span>
+                    <span className={`trend ${detailedComparison.trends.balance.trend}`}>
+                      {detailedComparison.trends.balance.change > 0 ? '+' : ''}{detailedComparison.trends.balance.change.toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
               )}
-            </>
-          )}
-        </>
-      )}
+            </div>
+
+            {detailedComparison?.recommendations?.length > 0 && (
+              <div className="recommendations">
+                <h4>{t.recommendations || 'Recommendations'}</h4>
+                <ul>
+                  {detailedComparison.recommendations.map((rec, index) => (
+                    <li key={index}>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
       {/* Budget Details Modal */}
       <BudgetDetailsModal

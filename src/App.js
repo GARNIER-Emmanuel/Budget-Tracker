@@ -348,42 +348,17 @@ function AppContent() {
         />
       }
       main={
-        <div className="main-content" style={{ paddingBottom: '2rem' }}>
+        <div className="main-content" style={{ paddingBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+          {currentPage === 'dashboard' && <CustomizableDashboard />}
           {currentPage === 'tracker' && <BankStatementImporter />}
-          {currentPage === 'tracker' ? (
-            <>
-              <div className="tracker-fullwidth">
-                <ExpenseSummary 
-                  totalExpenses={totalExpenses}
-                  balance={balance}
-                  income={totalIncome}
-                  translations={translations}
-                  currentLanguage={currentLanguage}
-                />
-                <ExpenseCharts 
-                  expenses={expenses}
-                  balance={balance}
-                  translations={translations}
-                  currentLanguage={currentLanguage}
-                  isDarkMode={isDarkMode}
-                />
-              </div>
-            </>
-          ) : currentPage === 'comparison' ? (
+          {currentPage === 'comparison' && (
             <BudgetComparison
               translations={translations}
               currentLanguage={currentLanguage}
               savedBudgets={savedBudgets}
               isDarkMode={isDarkMode}
             />
-          ) : (
-            <CustomizableDashboard
-              translations={translations}
-              currentLanguage={currentLanguage}
-              isDarkMode={isDarkMode}
-            />
           )}
-          <NotificationSystem />
         </div>
       }
       sidebarRight={

@@ -1,0 +1,123 @@
+.dashboard-root {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem 1rem;
+  box-sizing: border-box;
+}
+
+.dashboard-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  gap: 1rem;
+}
+
+.dashboard-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.dashboard-actions button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.7rem 1.7rem;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(37,99,235,0.08);
+  transition: background 0.2s;
+}
+.dashboard-actions button:hover {
+  background: #1d4ed8;
+}
+
+.dashboard-widgets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.dashboard-custom {
+  margin-top: 2.5rem;
+}
+
+.dashboard-custom h2 {
+  font-size: 1.3rem;
+  color: #334155;
+  margin-bottom: 1.2rem;
+  font-weight: 600;
+}
+
+.custom-widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.widget {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 2rem;
+  min-width: 220px;
+  min-height: 120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #374151;
+  font-weight: 500;
+  transition: box-shadow 0.2s, transform 0.3s, opacity 0.3s;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: widgetFadeIn 0.7s cubic-bezier(.4,1.4,.6,1) forwards;
+}
+@keyframes widgetFadeIn {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.widget:hover {
+  box-shadow: 0 4px 16px rgba(37,99,235,0.13);
+}
+
+.widget-budgets button {
+  transition: background 0.2s, transform 0.2s;
+}
+.widget-budgets button:hover {
+  background: #d97706;
+  transform: scale(1.07);
+}
+
+@media (max-width: 700px) {
+  .dashboard-root {
+    padding: 1rem 0.2rem 2rem 0.2rem;
+  }
+  .dashboard-header h1 {
+    font-size: 1.3rem;
+  }
+  .dashboard-actions button {
+    font-size: 0.95rem;
+    padding: 0.6rem 1.1rem;
+  }
+  .dashboard-widgets, .custom-widgets-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+} 
