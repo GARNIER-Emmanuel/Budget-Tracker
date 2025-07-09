@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { FaChartPie, FaThLarge, FaExchangeAlt, FaWallet, FaBars, FaTimes } from 'react-icons/fa';
 import LanguageSelector from './LanguageSelector';
-import DarkModeToggle from './DarkModeToggle';
 
 const Navigation = ({ 
   currentPage, 
   onPageChange, 
   translations, 
   currentLanguage,
-  onLanguageChange,
-  isDarkMode,
-  onToggleDarkMode
+  onLanguageChange
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -95,12 +92,6 @@ const Navigation = ({
             currentLanguage={currentLanguage} 
             onLanguageChange={onLanguageChange} 
             translations={translations} 
-          />
-          <DarkModeToggle 
-            isDarkMode={isDarkMode} 
-            onToggle={onToggleDarkMode} 
-            translations={translations} 
-            currentLanguage={currentLanguage} 
           />
         </div>
       </nav>
