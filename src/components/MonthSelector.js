@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FaCheckCircle, FaCircle, FaCalendarAlt } from 'react-icons/fa';
 
 const MonthSelector = ({ 
   selectedMonth, 
@@ -61,48 +62,43 @@ const MonthSelector = ({
     onMonthChange(monthKey);
   };
 
-  // Get saved months for quick access
-  const getSavedMonths = () => {
-    const savedMonths = new Set();
-    
-    // Add current month
-    savedMonths.add(`${currentMonth} ${currentYear}`);
-    
-    // Add months from saved budgets
-    savedBudgets.forEach(budget => {
-      savedMonths.add(budget.name);
-    });
-    
-    return Array.from(savedMonths).sort((a, b) => {
-      const dateA = new Date(a);
-      const dateB = new Date(b);
-      return dateB - dateA; // Most recent first
+  // Check if a month has saved data
+  const hasSavedData = (monthKey) => {
+    return savedBudgets.some(budget => budget.name === monthKey);
+  };
+
+  // Generate all months for the selected year
+  const generateAllMonths = () => {
+    return months.map(month => {
+      const monthKey = `${month} ${selectedYear}`;
+      const hasData = hasSavedData(monthKey);
+      const isCurrentMonth = month === currentMonth && selectedYear === currentYear;
+      const isSelected = monthKey === selectedMonth;
+      
+      return {
+        month,
+        monthKey,
+        hasData,
+        isCurrentMonth,
+        isSelected
+      };
     });
   };
 
-  const savedMonths = getSavedMonths();
+  const allMonths = generateAllMonths();
 
   return (
     <div className="month-selector">
-      <h3>{translations[currentLanguage]?.selectMonth || 'Select Month'}</h3>
+      <h3 className="heading-3 mb-4">{translations[currentLanguage]?.selectMonth || 'Select Month'}</h3>
       
-      <div className="month-year-selectors">
+      {/* Sélecteur d'année */}
+      <div className="year-selector mb-4">
+        <h4 className="heading-2 mb-2">{translations[currentLanguage]?.selectYear || 'Select Year'}</h4>
         <select
-          className="month-select"
-          value={selectedMonthName}
-          onChange={(e) => handleMonthChange(e.target.value)}
-        >
-          {months.map(month => (
-            <option key={month} value={month}>
-              {month}
-            </option>
-          ))}
-        </select>
-        
-        <select
-          className="year-select"
+          className="input-field"
           value={selectedYear}
           onChange={(e) => handleYearChange(e.target.value)}
+          style={{ maxWidth: 120 }}
         >
           {years.map(year => (
             <option key={year} value={year}>
@@ -110,6 +106,110 @@ const MonthSelector = ({
             </option>
           ))}
         </select>
+      </div>
+      
+      {/* Grille de tous les mois */}
+      <div className="all-months-grid mb-4">
+        <h4 className="heading-2 mb-2">{translations[currentLanguage]?.allMonths || 'All Months'}</h4>
+        <div className="months-grid" style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+          gap: 'var(--spacing-2)' 
+        }}>
+          {allMonths.map(({ month, monthKey, hasData, isCurrentMonth, isSelected }) => (
+            <button
+              key={monthKey}
+              className={`month-button ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ 
+                fontSize: 'var(--font-size-sm)', 
+                padding: 'var(--spacing-3) var(--spacing-4)', 
+                borderRadius: 'var(--border-radius-md)', 
+                fontWeight: 600, 
+                borderWidth: 2, 
+                borderStyle: 'solid', 
+                borderColor: isSelected ? 'var(--primary-color)' : 'var(--gray-200)', 
+                background: isSelected ? 'var(--primary-gradient)' : 'var(--bg-primary)', 
+                color: isSelected ? 'var(--text-inverse)' : 'var(--text-primary)', 
+                transition: 'all var(--transition-normal)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 'var(--spacing-2)',
+                position: 'relative'
+              }}
+              onClick={() => onMonthChange(monthKey)}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)' }}>
+                <FaCalendarAlt style={{ fontSize: 'var(--font-size-xs)' }} />
+                {month}
+              </span>
+              
+              {/* Indicateur de statut */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)' }}>
+                {hasData ? (
+                  <FaCheckCircle 
+                    style={{ 
+                      color: isSelected ? 'var(--text-inverse)' : 'var(--success-color)',
+                      fontSize: 'var(--font-size-sm)'
+                    }} 
+                    title={translations[currentLanguage]?.hasData || 'Has data'}
+                  />
+                ) : (
+                  <FaCircle 
+                    style={{ 
+                      color: isSelected ? 'var(--text-inverse)' : 'var(--gray-400)',
+                      fontSize: 'var(--font-size-xs)'
+                    }} 
+                    title={translations[currentLanguage]?.noData || 'No data'}
+                  />
+                )}
+                
+                {/* Indicateur mois actuel */}
+                {isCurrentMonth && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'var(--accent-color)',
+                    border: '2px solid var(--bg-primary)'
+                  }} />
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      {/* Légende */}
+      <div className="month-legend" style={{ 
+        padding: 'var(--spacing-3)', 
+        background: 'var(--bg-secondary)', 
+        borderRadius: 'var(--border-radius-md)',
+        fontSize: 'var(--font-size-sm)'
+      }}>
+        <h5 className="heading-3 mb-2">{translations[currentLanguage]?.legend || 'Legend'}</h5>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+            <FaCheckCircle style={{ color: 'var(--success-color)' }} />
+            <span>{translations[currentLanguage]?.hasData || 'Has saved data'}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+            <FaCircle style={{ color: 'var(--gray-400)', fontSize: 'var(--font-size-xs)' }} />
+            <span>{translations[currentLanguage]?.noData || 'No data'}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: 'var(--accent-color)'
+            }} />
+            <span>{translations[currentLanguage]?.currentMonth || 'Current month'}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

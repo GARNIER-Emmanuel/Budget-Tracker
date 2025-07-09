@@ -33,10 +33,10 @@ const ExpenseInput = ({
   };
 
   return (
-    <div className={`card ${isApl ? 'apl-card' : ''}`}>
+    <div className={`expense-input-card ${isApl ? 'apl-card' : ''}`}>
       <div className="input-group">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <label className="input-group label">
+        <div className="input-header">
+          <label className="input-label">
             {translations[currentLanguage][label] || label.replace(/([A-Z])/g, ' $1').trim()}
           </label>
           {isShared && (
@@ -46,15 +46,18 @@ const ExpenseInput = ({
                 id={`shared-${label}`}
                 checked={sharedValue}
                 onChange={(e) => onSharedChange(e.target.checked)}
+                className="form-checkbox"
               />
-              <label htmlFor={`shared-${label}`}>
+              <label htmlFor={`shared-${label}`} className="checkbox-label">
                 {translations[currentLanguage].shared}
               </label>
             </div>
           )}
         </div>
-        <div className="input-wrapper">
-          <span className="currency">{isApl ? '-' : '€'}</span>
+        <div className="input-with-currency">
+          <span className="currency">
+            {isApl ? '-' : '€'}
+          </span>
           <input
             type="text"
             inputMode="decimal"
@@ -62,7 +65,7 @@ const ExpenseInput = ({
             onChange={handleInputChange}
             onBlur={handleBlur}
             placeholder={placeholder}
-            className={`input-field ${isApl ? 'apl-input' : ''}`}
+            className="form-input"
           />
         </div>
       </div>

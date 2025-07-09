@@ -2,8 +2,8 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #f3f4f6;
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: var(--bg-secondary);
+  font-family: var(--font-family);
   display: flex;
   flex-direction: row;
 }
@@ -15,9 +15,9 @@
   top: 0;
   width: 280px;
   height: 100vh;
-  background: none !important;
-  color: #fff;
-  box-shadow: 4px 0 24px rgba(31,41,55,0.10);
+  background: var(--bg-primary) !important;
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-lg);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -31,42 +31,7 @@
   width: 70px;
 }
 
-/* Sidebar droite : fixe à droite, scrollable indépendamment */
-.layout-sidebar-right {
-  background: none !important;
-  color: #e0e7ff;
-  /* box-shadow: -2px 0 12px rgba(31,41,55,0.10); */
-  box-shadow: none !important;
-  padding: 2rem 1.2rem 1.2rem 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  overflow-y: auto;
-  min-height: 0;
-  z-index: 100;
-  /* border-radius: 1.5rem 0 0 1.5rem; */
-  border-radius: 0 !important;
-  border: none !important;
-  position: relative;
-  right: unset;
-  top: unset;
-  width: 280px;
-  min-width: 280px;
-  max-width: 280px;
-  height: 100vh;
-  background: linear-gradient(160deg, #2563eb 0%, #1e3a8a 100%) !important;
-  color: #e0e7ff;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  border: none !important;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  overflow-y: auto;
-  min-height: 0;
-  z-index: 100;
-  padding: 2rem 1.2rem 1.2rem 1.2rem;
-}
+/* Sidebar droite supprimée */
 
 .layout-main-area {
   margin-left: 0;
@@ -82,6 +47,7 @@
   box-sizing: border-box;
   overflow: hidden;
   transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1), width 0.25s cubic-bezier(0.4,0,0.2,1);
+  background: var(--bg-secondary);
 }
 
 .tracker-fullwidth {
@@ -108,14 +74,15 @@
 .layout-header {
   position: sticky;
   top: 0;
-  background: #fff;
-  color: #1f2937;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   z-index: 20;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-  padding: 1.2rem 2.5rem 1.2rem 2.5rem;
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-6) var(--spacing-8) var(--spacing-6) var(--spacing-8);
   display: flex;
   align-items: center;
   min-height: 64px;
+  border-bottom: 1px solid var(--gray-200);
 }
 
 .layout-content-row {
@@ -133,46 +100,42 @@
   flex: 1 1 0%;
   min-width: 0;
   min-height: 0;
-  padding: 2.5rem 0 1.5rem 2.5rem;
+  padding: var(--spacing-12) 0 var(--spacing-8) var(--spacing-12);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--spacing-8);
   height: 100%;
   width: 100%;
   box-sizing: border-box;
-  /* Ajout pour centrer et occuper tout l'espace */
   justify-content: flex-start;
   align-items: stretch;
+  background: var(--bg-secondary);
 }
 
 .layout-footer {
   text-align: center;
-  color: #6b7280;
+  color: var(--text-tertiary);
   background: transparent;
-  font-size: 0.95rem;
-  padding: 1.5rem 0 0.5rem 0;
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-6) 0 var(--spacing-2) 0;
   flex-shrink: 0;
 }
 
 @media (max-width: 1200px) {
-  .layout-sidebar-right {
-    width: 220px;
-    padding: 1.2rem 0.5rem 1rem 0.5rem;
-  }
   .layout-main-area {
     margin-left: 0 !important;
-    width: calc(100vw - 220px) !important;
+    width: 100% !important;
   }
   .layout-root.sidebar-collapsed .layout-main-area {
     margin-left: 0 !important;
-    width: calc(100vw - 220px) !important;
+    width: 100% !important;
   }
   .layout-main-content {
-    padding: 1.2rem 1.2rem 1rem 1.2rem;
+    padding: var(--spacing-6) var(--spacing-6) var(--spacing-4) var(--spacing-6);
   }
   .layout-header {
-    padding: 1.2rem 1.2rem 1.2rem 1.2rem;
+    padding: var(--spacing-6) var(--spacing-6) var(--spacing-6) var(--spacing-6);
   }
 }
 @media (max-width: 900px) {
@@ -192,10 +155,10 @@
 }
 @media (max-width: 600px) {
   .layout-main-content {
-    padding: 0.5rem 0.1rem;
+    padding: var(--spacing-2) var(--spacing-1);
   }
   .layout-header {
-    padding: 0.7rem 0.2rem;
+    padding: var(--spacing-2) var(--spacing-1);
     min-height: 48px;
   }
 } 

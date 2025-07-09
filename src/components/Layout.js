@@ -1,7 +1,7 @@
 import React from 'react';
 import './Layout.css';
 
-function Layout({ sidebarLeft, main, sidebarRight, className = '' }) {
+function Layout({ sidebarLeft, main, className = '' }) {
   return (
     <div className={`layout-root ${className}`}>
       <aside className="layout-sidebar-left">
@@ -13,10 +13,6 @@ function Layout({ sidebarLeft, main, sidebarRight, className = '' }) {
           <main className="layout-main-content">
             {main}
           </main>
-          {/* Sidebar droite */}
-          <aside className="layout-sidebar-right">
-            {sidebarRight}
-          </aside>
         </div>
       </div>
     </div>

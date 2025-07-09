@@ -32,56 +32,63 @@ const BudgetDetailsModal = ({ budget, isOpen, onClose, translations, currentLang
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{budget.name}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '90vh', overflow: 'auto' }}>
+        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)', paddingBottom: 'var(--spacing-4)', borderBottom: '1px solid var(--gray-200)' }}>
+          <h2 className="heading-2">{budget.name}</h2>
+          <button className="btn-ghost" onClick={onClose} style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'bold', padding: 'var(--spacing-2)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
         
         <div className="modal-body">
           {/* Summary */}
-          <div className="budget-summary-section">
-            <h3>{translations[currentLanguage]?.monthlySummary || 'Monthly Summary'}</h3>
-            <div className="summary-grid">
-              <div className="summary-item">
-                <span>{translations[currentLanguage]?.income || 'Income'}:</span>
-                <span className="amount income">€{income.toFixed(2)}</span>
+          <div className="card mb-6">
+            <h3 className="heading-3 mb-4">{translations[currentLanguage]?.monthlySummary || 'Monthly Summary'}</h3>
+            <div className="summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--spacing-4)' }}>
+              <div className="summary-item" style={{ textAlign: 'center', padding: 'var(--spacing-4)', background: 'var(--gray-50)', borderRadius: 'var(--border-radius-md)' }}>
+                <div className="text-secondary text-sm mb-1">{translations[currentLanguage]?.income || 'Income'}</div>
+                <div className="text-body text-bold" style={{ color: 'var(--success-color)', fontSize: 'var(--font-size-lg)' }}>€{income.toFixed(2)}</div>
               </div>
-              <div className="summary-item">
-                <span>{translations[currentLanguage]?.totalExpenses || 'Total Expenses'}:</span>
-                <span className="amount expense">€{totalExpenses.toFixed(2)}</span>
+              <div className="summary-item" style={{ textAlign: 'center', padding: 'var(--spacing-4)', background: 'var(--gray-50)', borderRadius: 'var(--border-radius-md)' }}>
+                <div className="text-secondary text-sm mb-1">{translations[currentLanguage]?.totalExpenses || 'Total Expenses'}</div>
+                <div className="text-body text-bold" style={{ color: 'var(--error-color)', fontSize: 'var(--font-size-lg)' }}>€{totalExpenses.toFixed(2)}</div>
               </div>
-              <div className="summary-item">
-                <span>{translations[currentLanguage]?.balance || 'Balance'}:</span>
-                <span className={`amount ${balance >= 0 ? 'positive' : 'negative'}`}>
+              <div className="summary-item" style={{ textAlign: 'center', padding: 'var(--spacing-4)', background: 'var(--gray-50)', borderRadius: 'var(--border-radius-md)' }}>
+                <div className="text-secondary text-sm mb-1">{translations[currentLanguage]?.balance || 'Balance'}</div>
+                <div className="text-body text-bold" style={{ color: balance >= 0 ? 'var(--success-color)' : 'var(--error-color)', fontSize: 'var(--font-size-lg)' }}>
                   €{balance.toFixed(2)}
-                </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Detailed Expenses */}
-          <div className="expenses-details">
-            <h3>{translations[currentLanguage]?.expenseBreakdown || 'Expense Breakdown'}</h3>
+          <div className="expenses-details mb-6">
+            <h3 className="heading-3 mb-4">{translations[currentLanguage]?.expenseBreakdown || 'Expense Breakdown'}</h3>
             
             {Object.entries(expenseCategories).map(([category, expenseKeys]) => (
-              <div key={category} className="expense-category">
-                <h4>{category}</h4>
+              <div key={category} className="card mb-4">
+                <h4 className="heading-2 mb-3">{category}</h4>
                 <div className="expense-list">
                   {expenseKeys.map(key => (
-                    <div key={key} className="expense-item">
-                      <div className="expense-info">
-                        <span className="expense-label">
+                    <div key={key} className="expense-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--spacing-2) 0', borderBottom: '1px solid var(--gray-100)' }}>
+                      <div className="expense-info" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                        <span className="text-body">
                           {translations[currentLanguage]?.[key] || key}
                         </span>
                         {budget.sharedExpenses && budget.sharedExpenses[key] && (
-                          <span className="shared-badge">
+                          <span className="shared-badge" style={{ 
+                            background: 'var(--primary-color)', 
+                            color: 'var(--text-inverse)', 
+                            padding: 'var(--spacing-1) var(--spacing-2)', 
+                            borderRadius: 'var(--border-radius-sm)', 
+                            fontSize: 'var(--font-size-xs)', 
+                            fontWeight: 600 
+                          }}>
                             {translations[currentLanguage]?.shared || 'Shared'}
                           </span>
                         )}
                       </div>
-                      <span className="expense-amount">€{(budget.expenses[key] || 0).toFixed(2)}</span>
+                      <span className="text-body text-bold">€{(budget.expenses[key] || 0).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -91,27 +98,27 @@ const BudgetDetailsModal = ({ budget, isOpen, onClose, translations, currentLang
 
           {/* Financial Goals Information */}
           {budget.goalAchievements && (
-            <div className="goals-info">
-              <h3>{translations[currentLanguage]?.financialGoals || 'Financial Goals'}</h3>
+            <div className="goals-info mb-6">
+              <h3 className="heading-3 mb-4">{translations[currentLanguage]?.financialGoals || 'Financial Goals'}</h3>
               <div className="goals-details">
-                <div className="goal-detail">
-                  <div className="goal-header">
-                    <span>{translations[currentLanguage]?.monthlySavingsGoal || 'Monthly Savings Goal'}</span>
-                    <span className={`goal-status ${budget.goalAchievements.monthlySavings.achieved ? 'achieved' : 'not-achieved'}`}>
+                <div className="goal-detail card mb-4">
+                  <div className="goal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
+                    <span className="text-body text-semibold">{translations[currentLanguage]?.monthlySavingsGoal || 'Monthly Savings Goal'}</span>
+                    <span className={`goal-status ${budget.goalAchievements.monthlySavings.achieved ? 'achieved' : 'not-achieved'}`} style={{ fontSize: 'var(--font-size-lg)' }}>
                       {budget.goalAchievements.monthlySavings.achieved ? '✅' : '❌'}
                     </span>
                   </div>
                   <div className="goal-progress">
-                    <div className="progress-bar">
+                    <div className="progress-bar" style={{ height: '8px', marginBottom: 'var(--spacing-2)' }}>
                       <div 
                         className="progress-fill"
                         style={{ 
                           width: `${budget.goalAchievements.monthlySavings.progress}%`,
-                          backgroundColor: budget.goalAchievements.monthlySavings.achieved ? '#10b981' : '#ef4444'
+                          backgroundColor: budget.goalAchievements.monthlySavings.achieved ? 'var(--success-color)' : 'var(--error-color)'
                         }}
                       />
                     </div>
-                    <div className="goal-values">
+                    <div className="goal-values" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
                       <span>€{budget.goalAchievements.monthlySavings.current.toFixed(2)}</span>
                       <span>/</span>
                       <span>€{budget.goalAchievements.monthlySavings.target.toFixed(2)}</span>
@@ -119,24 +126,24 @@ const BudgetDetailsModal = ({ budget, isOpen, onClose, translations, currentLang
                   </div>
                 </div>
                 
-                <div className="goal-detail">
-                  <div className="goal-header">
-                    <span>{translations[currentLanguage]?.leisureSpendingLimit || 'Leisure Spending Limit'}</span>
-                    <span className={`goal-status ${budget.goalAchievements.maxLeisureSpending.achieved ? 'achieved' : 'not-achieved'}`}>
+                <div className="goal-detail card mb-4">
+                  <div className="goal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
+                    <span className="text-body text-semibold">{translations[currentLanguage]?.leisureSpendingLimit || 'Leisure Spending Limit'}</span>
+                    <span className={`goal-status ${budget.goalAchievements.maxLeisureSpending.achieved ? 'achieved' : 'not-achieved'}`} style={{ fontSize: 'var(--font-size-lg)' }}>
                       {budget.goalAchievements.maxLeisureSpending.achieved ? '✅' : '❌'}
                     </span>
                   </div>
                   <div className="goal-progress">
-                    <div className="progress-bar">
+                    <div className="progress-bar" style={{ height: '8px', marginBottom: 'var(--spacing-2)' }}>
                       <div 
                         className="progress-fill"
                         style={{ 
                           width: `${budget.goalAchievements.maxLeisureSpending.progress}%`,
-                          backgroundColor: budget.goalAchievements.maxLeisureSpending.achieved ? '#10b981' : '#ef4444'
+                          backgroundColor: budget.goalAchievements.maxLeisureSpending.achieved ? 'var(--success-color)' : 'var(--error-color)'
                         }}
                       />
                     </div>
-                    <div className="goal-values">
+                    <div className="goal-values" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
                       <span>€{budget.goalAchievements.maxLeisureSpending.current.toFixed(2)}</span>
                       <span>/</span>
                       <span>€{budget.goalAchievements.maxLeisureSpending.target.toFixed(2)}</span>
@@ -144,24 +151,24 @@ const BudgetDetailsModal = ({ budget, isOpen, onClose, translations, currentLang
                   </div>
                 </div>
                 
-                <div className="goal-detail">
-                  <div className="goal-header">
-                    <span>{translations[currentLanguage]?.emergencyFund || 'Emergency Fund'}</span>
-                    <span className={`goal-status ${budget.goalAchievements.emergencyFundTarget.achieved ? 'achieved' : 'not-achieved'}`}>
+                <div className="goal-detail card mb-4">
+                  <div className="goal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
+                    <span className="text-body text-semibold">{translations[currentLanguage]?.emergencyFund || 'Emergency Fund'}</span>
+                    <span className={`goal-status ${budget.goalAchievements.emergencyFundTarget.achieved ? 'achieved' : 'not-achieved'}`} style={{ fontSize: 'var(--font-size-lg)' }}>
                       {budget.goalAchievements.emergencyFundTarget.achieved ? '✅' : '❌'}
                     </span>
                   </div>
                   <div className="goal-progress">
-                    <div className="progress-bar">
+                    <div className="progress-bar" style={{ height: '8px', marginBottom: 'var(--spacing-2)' }}>
                       <div 
                         className="progress-fill"
                         style={{ 
                           width: `${budget.goalAchievements.emergencyFundTarget.progress}%`,
-                          backgroundColor: budget.goalAchievements.emergencyFundTarget.achieved ? '#10b981' : '#ef4444'
+                          backgroundColor: budget.goalAchievements.emergencyFundTarget.achieved ? 'var(--success-color)' : 'var(--error-color)'
                         }}
                       />
                     </div>
-                    <div className="goal-values">
+                    <div className="goal-values" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
                       <span>€{budget.goalAchievements.emergencyFundTarget.current.toFixed(2)}</span>
                       <span>/</span>
                       <span>€{budget.goalAchievements.emergencyFundTarget.target.toFixed(2)}</span>
@@ -173,8 +180,10 @@ const BudgetDetailsModal = ({ budget, isOpen, onClose, translations, currentLang
           )}
 
           {/* Date Information */}
-          <div className="date-info">
-            <p><strong>{translations[currentLanguage]?.savedOn || 'Saved on'}:</strong> {new Date(budget.date).toLocaleDateString()}</p>
+          <div className="date-info" style={{ textAlign: 'center', padding: 'var(--spacing-4)', background: 'var(--gray-50)', borderRadius: 'var(--border-radius-md)' }}>
+            <p className="text-body text-secondary">
+              <span className="text-semibold">{translations[currentLanguage]?.savedOn || 'Saved on'}:</span> {new Date(budget.date).toLocaleDateString()}
+            </p>
           </div>
         </div>
       </div>

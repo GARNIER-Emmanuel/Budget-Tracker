@@ -25,7 +25,7 @@ ChartJS.register(
 );
 
 const BudgetComparison = (props) => {
-  const { state } = useBudget();
+  const { state, dispatch } = useBudget();
   const currentLanguage = state?.currentLanguage || 'fr';
   const t = translations[currentLanguage] || {};
   const [analysis, setAnalysis] = useState(null);
@@ -85,7 +85,7 @@ const BudgetComparison = (props) => {
       console.log('Updating budgets with recalculated values...');
       // Update each budget individually through the context
       updatedBudgets.forEach(budget => {
-        state.dispatch({ type: BUDGET_ACTIONS.SAVE_BUDGET, payload: budget });
+        dispatch({ type: BUDGET_ACTIONS.SAVE_BUDGET, payload: budget });
       });
       return;
     }
@@ -233,7 +233,7 @@ const BudgetComparison = (props) => {
   };
 
   const removeBudget = (id) => {
-    state.dispatch({ type: BUDGET_ACTIONS.DELETE_BUDGET, payload: id });
+    dispatch({ type: BUDGET_ACTIONS.DELETE_BUDGET, payload: id });
   };
 
   const showBudgetDetails = (budget) => {
@@ -246,7 +246,7 @@ const BudgetComparison = (props) => {
     setSelectedBudget(null);
   };
 
-  const prepareChartData = () => {
+  const prepareChartData = (type = 'all') => {
     if (state.savedBudgets.length === 0) return null;
 
     // Filter out invalid budgets for charts
@@ -263,6 +263,21 @@ const BudgetComparison = (props) => {
 
     // Trie uniquement les budgets existants, pas de mois "vides"
     const sortedBudgets = validBudgets.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (type === 'balance') {
+      return {
+        labels: sortedBudgets.map(b => b.name),
+        datasets: [
+          {
+            label: t.balance || 'Balance',
+            data: sortedBudgets.map(b => b.balance),
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.1
+          }
+        ]
+      };
+    }
 
     return {
       labels: sortedBudgets.map(b => b.name),
@@ -294,38 +309,48 @@ const BudgetComparison = (props) => {
 
   const getChartOptions = (isLineChart = false) => ({
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { 
         position: isLineChart ? 'top' : 'bottom',
         labels: {
-          color: '#374151',
+          color: 'var(--text-primary)',
+          font: { size: 12, weight: '500' },
+          padding: 8,
+          usePointStyle: true,
+          pointStyle: 'circle',
         }
       },
       title: { display: false },
       tooltip: {
-        backgroundColor: '#ffffff',
-        titleColor: '#374151',
-        bodyColor: '#374151',
-        borderColor: '#e5e7eb',
+        backgroundColor: 'var(--bg-primary)',
+        titleColor: 'var(--text-primary)',
+        bodyColor: 'var(--text-primary)',
+        borderColor: 'var(--border-color)',
         borderWidth: 1,
+        cornerRadius: 8,
+        titleFont: { size: 12 },
+        bodyFont: { size: 11 },
       }
     },
     scales: isLineChart ? {
       y: { 
         beginAtZero: true,
         ticks: {
-          color: '#374151',
+          color: 'var(--text-primary)',
+          font: { size: 11 }
         },
         grid: {
-          color: '#e5e7eb',
+          color: 'var(--border-color)',
         }
       },
       x: {
         ticks: {
-          color: '#374151',
+          color: 'var(--text-primary)',
+          font: { size: 11 }
         },
         grid: {
-          color: '#e5e7eb',
+          color: 'var(--border-color)',
         }
       }
     } : undefined
@@ -334,225 +359,134 @@ const BudgetComparison = (props) => {
   const chartData = prepareChartData();
 
   return (
-    <div className="comparison-root" style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1rem' }}>
-      <header style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>{t.comparisonTitle || 'Comparaison des budgets'}</h1>
-        <p style={{ color: '#64748b', marginTop: 8 }}>{t.comparisonDesc || 'Comparez vos budgets sauvegardés et visualisez votre évolution financière.'}</p>
-      </header>
-      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24, marginBottom: 32 }}>
-        <h2 style={{ fontSize: '1.2rem', color: '#2563eb', marginBottom: 12 }}>{t.comparisonCharts || 'Évolution graphique'}</h2>
-        {chartData && <Line data={chartData} options={getChartOptions(true)} />}
-      </section>
-      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24, marginBottom: 32 }}>
-        <h2 style={{ fontSize: '1.2rem', color: '#10b981', marginBottom: 12 }}>{t.comparisonBudgets || 'Liste des budgets sauvegardés'}</h2>
-        {/* Toggle button for mobile */}
-        {window.innerWidth < 768 && (
-          <button
-            className="toggle-budgets-button"
-            style={{
-              margin: '0 auto 1rem auto',
-              display: 'block',
-              padding: '0.75rem 1.25rem',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              fontSize: '1rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              width: '100%',
-              maxWidth: 400,
-            }}
-            onClick={() => setShowBudgetsMobile((v) => !v)}
-          >
-            {showBudgetsMobile
-              ? (t.hideSavedBudgets || 'Cacher les budgets sauvegardés')
-              : (t.showSavedBudgets || 'Afficher les budgets sauvegardés')}
-          </button>
-        )}
+    <div className="comparison-page">
+      {/* Header */}
+      <div className="page-header">
+        <h1 className="page-title">{t.comparisonTitle || 'Comparaison des budgets'}</h1>
+        <p className="page-description">{t.comparisonSubtitle || 'Analysez l\'évolution de vos finances sur plusieurs mois'}</p>
+      </div>
 
-        {state.savedBudgets.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📊</div>
-            <h3>{t.noBudgets || 'No saved budgets yet'}</h3>
-            <p>{t.saveFirstBudget || 'Save your first budget in the tracker page to start comparing'}</p>
-          </div>
-        ) : (
-          <>
-            {/* Saved Budgets List */}
-            {(showBudgetsMobile || window.innerWidth >= 768) && (
-              <div className="saved-budgets-section">
-                <h3>{t.savedBudgets || 'Saved Budgets'}</h3>
-                <div className="budgets-grid">
-                  {[...state.savedBudgets].sort((a, b) => new Date(a.date) - new Date(b.date)).map((budget, index) => {
-                    // Calculate and validate values for display
-                    const income = typeof budget.income === 'number' && !isNaN(budget.income) ? budget.income : 0;
-                    
-                    // Calculate total expenses with shared cost adjustment and APL reduction
-                    const totalExpenses = budget.expenses && budget.sharedExpenses ? 
-                      Object.entries(budget.expenses).reduce((total, [key, value]) => {
-                        const isShared = budget.sharedExpenses[key];
-                        const numValue = typeof value === 'number' && !isNaN(value) ? value : 0;
-                        
-                        // Special handling for APL (housing allowance)
-                        if (key === 'apl') {
-                          const aplReduction = isShared ? numValue / 2 : numValue;
-                          return total - aplReduction;
-                        }
-                        
-                        // If shared, divide by 2 (assuming equal split)
-                        const adjustedValue = isShared ? numValue / 2 : numValue;
-                        return total + adjustedValue;
-                      }, 0) : (budget.totalExpenses || 0);
-                    
-                    const balance = income - totalExpenses;
-                    
-                    return (
-                      <div key={budget.id} className="budget-card">
-                        <div className="budget-header">
-                          <h4>{budget.name}</h4>
-                          <div className="budget-actions">
-                            <button 
-                              onClick={() => showBudgetDetails(budget)}
-                              className="details-button"
-                              title={t.viewDetails || 'View details'}
-                            >
-                              👁️
-                            </button>
-                            <button 
-                              onClick={() => removeBudget(budget.id)}
-                              className="remove-button"
-                              title={t.removeBudget || 'Remove budget'}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </div>
-                        <div className="budget-summary">
-                          <div className="budget-item">
-                            <span>{t.income || 'Income'}:</span>
-                            <span className="amount income">€{income.toFixed(2)}</span>
-                          </div>
-                          <div className="budget-item">
-                            <span>{t.totalExpenses || 'Expenses'}:</span>
-                            <span className="amount expense">€{totalExpenses.toFixed(2)}</span>
-                          </div>
-                          <div className="budget-item">
-                            <span>{t.balance || 'Balance'}:</span>
-                            <span className={`amount ${balance >= 0 ? 'positive' : 'negative'}`}>
-                              €{balance.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Financial Goals Status */}
-                        {budget.goalAchievements && (
-                          <div className="budget-goals">
-                            <h5>{t.financialGoals || 'Financial Goals'}</h5>
-                            <div className="goals-status">
-                              <div className="goal-status-item">
-                                <span className="goal-label">{t.monthlySavingsGoal || 'Savings'}:</span>
-                                <span className={`goal-status ${budget.goalAchievements.monthlySavings.achieved ? 'achieved' : 'not-achieved'}`}>
-                                  {budget.goalAchievements.monthlySavings.achieved ? '✅' : '❌'}
-                                </span>
-                              </div>
-                              <div className="goal-status-item">
-                                <span className="goal-label">{t.leisureSpendingLimit || 'Leisure'}:</span>
-                                <span className={`goal-status ${budget.goalAchievements.maxLeisureSpending.achieved ? 'achieved' : 'not-achieved'}`}>
-                                  {budget.goalAchievements.maxLeisureSpending.achieved ? '✅' : '❌'}
-                                </span>
-                              </div>
-                              <div className="goal-status-item">
-                                <span className="goal-label">{t.emergencyFund || 'Emergency'}:</span>
-                                <span className={`goal-status ${budget.goalAchievements.emergencyFundTarget.achieved ? 'achieved' : 'not-achieved'}`}>
-                                  {budget.goalAchievements.emergencyFundTarget.achieved ? '✅' : '❌'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+      {/* Charts Section */}
+      {analysis && (
+        <div className="section">
+          <h2 className="heading-2">{t.chartsTitle || 'Graphiques d\'évolution'}</h2>
+          <div className="charts-container">
+            <div className="card">
+              <h3 className="heading-3">{t.expenseTrend || 'Évolution des finances'}</h3>
+              <div className="chart-container">
+                <Line data={prepareChartData()} options={getChartOptions(true)} />
               </div>
-            )}
-          </>
-        )}
-      </section>
-      <section style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 24 }}>
-        <h2 style={{ fontSize: '1.2rem', color: '#f59e42', marginBottom: 12 }}>{t.comparisonTips || 'Conseils IA & alertes'}</h2>
-        {/* Analysis */}
-        {analysis && (
-          <div className="analysis-section">
-            <h3>{t.analysis || 'Analysis'}</h3>
-            <div className="analysis-grid">
-              <div className="analysis-card">
-                <h4>{t.overview || 'Overview'}</h4>
-                <div className="analysis-item">
-                  <span>{t.totalBudgets || 'Total budgets'}:</span>
-                  <span>{analysis.totalBudgets}</span>
-                </div>
-                <div className="analysis-item">
-                  <span>{t.period || 'Period'}:</span>
-                  <span>{analysis.dateRange.start} - {analysis.dateRange.end}</span>
-                </div>
-                <div className="analysis-item">
-                  <span>{t.averageIncome || 'Average income'}:</span>
-                  <span>€{analysis.averageIncome.toFixed(0)}</span>
-                </div>
-                <div className="analysis-item">
-                  <span>{t.averageExpenses || 'Average expenses'}:</span>
-                  <span>€{analysis.averageExpenses.toFixed(0)}</span>
-                </div>
-                <div className="analysis-item">
-                  <span>{t.totalSavings || 'Total savings'}:</span>
-                  <span className={analysis.totalSavings >= 0 ? 'positive' : 'negative'}>
-                    €{analysis.totalSavings.toFixed(0)}
-                  </span>
-                </div>
-              </div>
-
-              {detailedComparison && (
-                <div className="analysis-card">
-                  <h4>{t.trends || 'Trends'}</h4>
-                  <div className="trend-item">
-                    <span>{t.income || 'Income'}:</span>
-                    <span className={`trend ${detailedComparison.trends.income.trend}`}>
-                      {detailedComparison.trends.income.change > 0 ? '+' : ''}{detailedComparison.trends.income.change.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="trend-item">
-                    <span>{t.expenses || 'Expenses'}:</span>
-                    <span className={`trend ${detailedComparison.trends.expenses.trend}`}>
-                      {detailedComparison.trends.expenses.change > 0 ? '+' : ''}{detailedComparison.trends.expenses.change.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="trend-item">
-                    <span>{t.balance || 'Balance'}:</span>
-                    <span className={`trend ${detailedComparison.trends.balance.trend}`}>
-                      {detailedComparison.trends.balance.change > 0 ? '+' : ''}{detailedComparison.trends.balance.change.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
-
-            {detailedComparison?.recommendations?.length > 0 && (
-              <div className="recommendations">
-                <h4>{t.recommendations || 'Recommendations'}</h4>
-                <ul>
-                  {detailedComparison.recommendations.map((rec, index) => (
-                    <li key={index}>{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
-        )}
-      </section>
+        </div>
+      )}
 
-      {/* Budget Details Modal */}
+      {/* Budget List Section */}
+      <div className="section">
+        <div className="budget-list-header">
+          <h2 className="heading-2">{t.budgetList || 'Liste des budgets'}</h2>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => setShowBudgetsMobile(!showBudgetsMobile)}
+          >
+            {showBudgetsMobile ? t.hideBudgets : t.showBudgets}
+          </button>
+        </div>
+
+        <div className="budget-grid">
+          {state.savedBudgets.map((budget, index) => (
+            <div key={budget.id || index} className="card">
+              <div className="budget-header">
+                <h3 className="heading-3">{budget.name}</h3>
+                <div className="budget-actions">
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={() => showBudgetDetails(budget)}
+                  >
+                    {t.view || 'Voir'}
+                  </button>
+                  <button 
+                    className="btn btn-danger btn-sm"
+                    onClick={() => removeBudget(budget.id)}
+                  >
+                    {t.delete || 'Supprimer'}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="budget-summary">
+                <div className="summary-item">
+                  <div className="summary-label">{t.income || 'Revenus'}</div>
+                  <div className="summary-value success">
+                    €{(budget.income || 0).toFixed(2)}
+                  </div>
+                </div>
+                <div className="summary-item">
+                  <div className="summary-label">{t.expenses || 'Dépenses'}</div>
+                  <div className="summary-value error">
+                    €{(budget.totalExpenses || 0).toFixed(2)}
+                  </div>
+                </div>
+                <div className="summary-item">
+                  <div className="summary-label">{t.balance || 'Solde'}</div>
+                  <div className={`summary-value ${(budget.balance || 0) >= 0 ? 'success' : 'error'}`}>
+                    €{(budget.balance || 0).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Detailed Analysis Section */}
+      {detailedComparison && (
+        <div className="section">
+          <h2 className="heading-2">{t.detailedAnalysis || 'Analyse détaillée'}</h2>
+          
+          {/* Trends Summary */}
+          <div className="trends-summary card">
+            <h3 className="heading-3">{t.trendsSummary || 'Résumé des tendances'}</h3>
+            <div className="trends-grid">
+              <div className="trend-item">
+                <div className="summary-label">{t.income || 'Revenus'}</div>
+                <div className={`summary-value ${detailedComparison.trends.income.trend === 'increase' ? 'success' : 'error'}`}>
+                  {detailedComparison.trends.income.change > 0 ? '+' : ''}{detailedComparison.trends.income.change.toFixed(1)}%
+                </div>
+              </div>
+              <div className="trend-item">
+                <div className="summary-label">{t.expenses || 'Dépenses'}</div>
+                <div className={`summary-value ${detailedComparison.trends.expenses.trend === 'decrease' ? 'success' : 'error'}`}>
+                  {detailedComparison.trends.expenses.change > 0 ? '+' : ''}{detailedComparison.trends.expenses.change.toFixed(1)}%
+                </div>
+              </div>
+              <div className="trend-item">
+                <div className="summary-label">{t.balance || 'Solde'}</div>
+                <div className={`summary-value ${detailedComparison.trends.balance.trend === 'increase' ? 'success' : 'error'}`}>
+                  {detailedComparison.trends.balance.change > 0 ? '+' : ''}{detailedComparison.trends.balance.change.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          {detailedComparison.recommendations.length > 0 && (
+            <div className="recommendations card">
+              <h3 className="heading-3">{t.recommendations || 'Recommandations'}</h3>
+              <div className="recommendations-list">
+                {detailedComparison.recommendations.map((rec, index) => (
+                  <div key={index} className="recommendation-item">
+                    <span className="recommendation-icon">💡</span>
+                    <span className="recommendation-text">{rec}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal */}
       <BudgetDetailsModal
         budget={selectedBudget}
         isOpen={isModalOpen}

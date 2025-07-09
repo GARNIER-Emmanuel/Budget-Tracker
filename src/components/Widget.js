@@ -18,7 +18,33 @@ const widgetLabels = {
 
 const SummaryWidget = () => {
   const { state } = useBudget();
-  const { income, autreArgentRecu = 0, expenses, sharedExpenses } = state;
+  const { selectedMonth, savedBudgets } = state;
+  
+  // Get data for selected month
+  const getSelectedMonthData = () => {
+    if (selectedMonth) {
+      const selectedMonthBudget = savedBudgets.find(budget => budget.name === selectedMonth);
+      if (selectedMonthBudget) {
+        return {
+          income: selectedMonthBudget.income - (selectedMonthBudget.autreArgentRecu || 0),
+          autreArgentRecu: selectedMonthBudget.autreArgentRecu || 0,
+          expenses: selectedMonthBudget.expenses || {},
+          sharedExpenses: selectedMonthBudget.sharedExpenses || {}
+        };
+      }
+    }
+    // Fallback to current state data
+    return {
+      income: state.income,
+      autreArgentRecu: state.autreArgentRecu || 0,
+      expenses: state.expenses,
+      sharedExpenses: state.sharedExpenses
+    };
+  };
+
+  const monthData = getSelectedMonthData();
+  const { income, autreArgentRecu, expenses, sharedExpenses } = monthData;
+  
   const totalExpenses = React.useMemo(() => {
     return Object.entries(expenses).reduce((total, [key, value]) => {
       const isShared = sharedExpenses[key];
@@ -30,25 +56,33 @@ const SummaryWidget = () => {
       return total + adjustedValue;
     }, 0);
   }, [expenses, sharedExpenses]);
+  
   const totalIncome = (Number(income) || 0) + (Number(autreArgentRecu) || 0);
   const balance = totalIncome - totalExpenses;
+  
   return (
-    <div className="widget-summary" style={{ width: '100%', textAlign: 'center' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', gap: 16 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 22, color: '#10b981', marginBottom: 4 }}>💰</div>
-          <div style={{ fontWeight: 600, color: '#10b981', fontSize: 18 }}>Solde</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: balance >= 0 ? '#10b981' : '#ef4444' }}>€{balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
+    <div className="widget-summary">
+      <div className="summary-grid">
+        <div className="summary-item">
+          <div className="summary-icon success">💰</div>
+          <div className="summary-label success">Solde</div>
+          <div className={`summary-value ${balance >= 0 ? 'success' : 'error'}`}>
+            €{balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}
+          </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 22, color: '#2563eb', marginBottom: 4 }}>⬆️</div>
-          <div style={{ fontWeight: 600, color: '#2563eb', fontSize: 18 }}>Revenus</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#2563eb' }}>€{totalIncome.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
+        <div className="summary-item">
+          <div className="summary-icon primary">⬆️</div>
+          <div className="summary-label primary">Revenus</div>
+          <div className="summary-value primary">
+            €{totalIncome.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}
+          </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 22, color: '#ef4444', marginBottom: 4 }}>⬇️</div>
-          <div style={{ fontWeight: 600, color: '#ef4444', fontSize: 18 }}>Dépenses</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#ef4444' }}>€{totalExpenses.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
+        <div className="summary-item">
+          <div className="summary-icon error">⬇️</div>
+          <div className="summary-label error">Dépenses</div>
+          <div className="summary-value error">
+            €{totalExpenses.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}
+          </div>
         </div>
       </div>
     </div>
@@ -57,7 +91,7 @@ const SummaryWidget = () => {
 
 const GoalsWidget = () => {
   const { state, dispatch } = useBudget();
-  const { expenses, financialGoals = {}, currentLanguage } = state;
+  const { selectedMonth, savedBudgets, financialGoals = {}, currentLanguage } = state;
   const [editMode, setEditMode] = React.useState(false);
   const [goals, setGoals] = React.useState({
     monthlySavings: financialGoals.monthlySavings || 0,
@@ -65,10 +99,24 @@ const GoalsWidget = () => {
     emergencyFundTarget: financialGoals.emergencyFundTarget || 0,
   });
 
+  // Get data for selected month
+  const getSelectedMonthData = () => {
+    if (selectedMonth) {
+      const selectedMonthBudget = savedBudgets.find(budget => budget.name === selectedMonth);
+      if (selectedMonthBudget) {
+        return selectedMonthBudget.expenses || {};
+      }
+    }
+    // Fallback to current state data
+    return state.expenses;
+  };
+
+  const monthExpenses = getSelectedMonthData();
+
   // Valeurs réelles
-  const savings = expenses.savings || 0;
-  const leisure = expenses.leisure || 0;
-  const unforeseen = expenses.unforeseen || 0;
+  const savings = monthExpenses.savings || 0;
+  const leisure = monthExpenses.leisure || 0;
+  const unforeseen = monthExpenses.unforeseen || 0;
 
   // Progressions
   const savingsProgress = goals.monthlySavings > 0 ? Math.min((savings / goals.monthlySavings) * 100, 100) : 0;
@@ -99,164 +147,116 @@ const GoalsWidget = () => {
 
   return (
     <>
-      <div className="widget-goals" style={{ width: '100%', maxWidth: 340, margin: '0 auto' }}>
-        <div style={{ fontWeight: 600, color: '#a21caf', fontSize: 18, marginBottom: 8, textAlign: 'center' }}>
-          Objectifs financiers du mois
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontWeight: 500, color: '#10b981' }}>Épargne&nbsp;: <span style={{ fontWeight: 700 }}>€{savings.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span> / <span style={{ color: '#64748b' }}>€{goals.monthlySavings}</span></div>
-          <div className="progress-bar" style={{ background: '#e5e7eb', borderRadius: 8, height: 8, marginTop: 4, marginBottom: 4 }}>
-            <div style={{ width: `${savingsProgress}%`, background: '#10b981', height: 8, borderRadius: 8, transition: 'width 0.4s' }} />
+      <div className="widget-goals">
+        <div className="widget-title">Objectifs financiers du mois</div>
+        
+        <div className="goal-item">
+          <div className="goal-header">
+            <span className="goal-label success">Épargne</span>
+            <span className="goal-values">
+              <span className="current-value">€{savings.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span>
+              <span className="separator">/</span>
+              <span className="target-value">€{goals.monthlySavings}</span>
+            </span>
           </div>
-          {savingsAlert && <div style={{ color: '#ef4444', fontSize: 13 }}>Objectif d'épargne non atteint</div>}
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontWeight: 500, color: '#f59e42' }}>Loisirs&nbsp;: <span style={{ fontWeight: 700 }}>€{leisure.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span> / <span style={{ color: '#64748b' }}>€{goals.maxLeisureSpending}</span></div>
-          <div className="progress-bar" style={{ background: '#e5e7eb', borderRadius: 8, height: 8, marginTop: 4, marginBottom: 4 }}>
-            <div style={{ width: `${leisureProgress}%`, background: '#f59e42', height: 8, borderRadius: 8, transition: 'width 0.4s' }} />
+          <div className="progress-bar">
+            <div className="progress-fill success" style={{ width: `${savingsProgress}%` }} />
           </div>
-          {leisureAlert && <div style={{ color: '#ef4444', fontSize: 13 }}>Plafond loisirs dépassé</div>}
+          {savingsAlert && <div className="goal-alert">Objectif d'épargne non atteint</div>}
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontWeight: 500, color: '#6366f1' }}>Fonds d'urgence&nbsp;: <span style={{ fontWeight: 700 }}>€{unforeseen.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span> / <span style={{ color: '#64748b' }}>€{goals.emergencyFundTarget}</span></div>
-          <div className="progress-bar" style={{ background: '#e5e7eb', borderRadius: 8, height: 8, marginTop: 4, marginBottom: 4 }}>
-            <div style={{ width: `${emergencyProgress}%`, background: '#6366f1', height: 8, borderRadius: 8, transition: 'width 0.4s' }} />
+        
+        <div className="goal-item">
+          <div className="goal-header">
+            <span className="goal-label warning">Loisirs</span>
+            <span className="goal-values">
+              <span className="current-value">€{leisure.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span>
+              <span className="separator">/</span>
+              <span className="target-value">€{goals.maxLeisureSpending}</span>
+            </span>
           </div>
-          {emergencyAlert && <div style={{ color: '#ef4444', fontSize: 13 }}>Objectif fonds d'urgence non atteint</div>}
+          <div className="progress-bar">
+            <div className="progress-fill warning" style={{ width: `${leisureProgress}%` }} />
+          </div>
+          {leisureAlert && <div className="goal-alert">Plafond loisirs dépassé</div>}
         </div>
-        <button onClick={() => setEditMode(true)} style={{ background: '#a21caf', color: 'white', border: 'none', borderRadius: 4, padding: '0.5rem 1.5rem', fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>Modifier les objectifs</button>
+        
+        <div className="goal-item">
+          <div className="goal-header">
+            <span className="goal-label info">Fonds d'urgence</span>
+            <span className="goal-values">
+              <span className="current-value">€{unforeseen.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span>
+              <span className="separator">/</span>
+              <span className="target-value">€{goals.emergencyFundTarget}</span>
+            </span>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill info" style={{ width: `${emergencyProgress}%` }} />
+          </div>
+          {emergencyAlert && <div className="goal-alert">Objectif fonds d'urgence non atteint</div>}
+        </div>
+        
+        <button onClick={() => setEditMode(true)} className="btn btn-primary btn-block">
+          Modifier les objectifs
+        </button>
       </div>
+      
       {/* Modal d'édition des objectifs */}
       {editMode && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: 16,
-            maxWidth: 400,
-            padding: 24,
-            position: 'relative'
-          }}>
+        <div className="modal-backdrop">
+          <div className="modal goals-modal">
             <button 
               onClick={handleCancel}
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                background: '#f1f5f9',
-                border: 'none',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
-                cursor: 'pointer',
-                fontSize: 18,
-                fontWeight: 'bold'
-              }}
+              className="modal-close"
             >
               ×
             </button>
-            <h3 style={{ fontSize: '1.2rem', color: '#1e293b', marginBottom: 16 }}>Modifier les objectifs</h3>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, color: '#374151', fontWeight: 500 }}>
-                Épargne visée (€)
-              </label>
+            <h3 className="modal-title">Modifier les objectifs</h3>
+            
+            <div className="form-group">
+              <label className="form-label">Épargne visée (€)</label>
               <input
                 type="number"
                 value={goals.monthlySavings}
                 onChange={e => setGoals(g => ({ ...g, monthlySavings: e.target.value }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontSize: 16,
-                  boxSizing: 'border-box',
-                  marginBottom: 12
-                }}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
-              <label style={{ display: 'block', marginBottom: 8, color: '#374151', fontWeight: 500 }}>
-                Plafond loisirs (€)
-              </label>
-              <input
-                type="number"
-                value={goals.maxLeisureSpending}
-                onChange={e => setGoals(g => ({ ...g, maxLeisureSpending: e.target.value }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontSize: 16,
-                  boxSizing: 'border-box',
-                  marginBottom: 12
-                }}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
-              <label style={{ display: 'block', marginBottom: 8, color: '#374151', fontWeight: 500 }}>
-                Fonds d'urgence visé (€)
-              </label>
-              <input
-                type="number"
-                value={goals.emergencyFundTarget}
-                onChange={e => setGoals(g => ({ ...g, emergencyFundTarget: e.target.value }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontSize: 16,
-                  boxSizing: 'border-box',
-                  marginBottom: 12
-                }}
+                className="form-input"
                 placeholder="0.00"
                 step="0.01"
                 min="0"
               />
             </div>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button 
-                onClick={handleCancel}
-                style={{
-                  background: '#f1f5f9',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 20px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Annuler
+            
+            <div className="form-group">
+              <label className="form-label">Plafond loisirs (€)</label>
+              <input
+                type="number"
+                value={goals.maxLeisureSpending}
+                onChange={e => setGoals(g => ({ ...g, maxLeisureSpending: e.target.value }))}
+                className="form-input"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">Fonds d'urgence visé (€)</label>
+              <input
+                type="number"
+                value={goals.emergencyFundTarget}
+                onChange={e => setGoals(g => ({ ...g, emergencyFundTarget: e.target.value }))}
+                className="form-input"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            
+            <div className="modal-actions">
+              <button onClick={handleSave} className="btn btn-primary">
+                Sauvegarder
               </button>
-              <button 
-                onClick={handleSave}
-                style={{
-                  background: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 20px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Enregistrer
+              <button onClick={handleCancel} className="btn btn-secondary">
+                Annuler
               </button>
             </div>
           </div>
@@ -268,42 +268,88 @@ const GoalsWidget = () => {
 
 const ChartsWidget = () => {
   const { state } = useBudget();
-  const { expenses } = state;
+  const { selectedMonth, savedBudgets } = state;
+  
+  // Get data for selected month
+  const getSelectedMonthData = () => {
+    if (selectedMonth) {
+      const selectedMonthBudget = savedBudgets.find(budget => budget.name === selectedMonth);
+      if (selectedMonthBudget) {
+        return selectedMonthBudget.expenses || {};
+      }
+    }
+    // Fallback to current state data
+    return state.expenses;
+  };
+
+  const monthExpenses = getSelectedMonthData();
+  
   // Catégories à afficher (hors APL, savings, unforeseen, autreArgentRecu, income)
   const exclude = ['apl', 'savings', 'unforeseen', 'autreArgentRecu', 'income'];
-  const filtered = Object.entries(expenses)
+  const filtered = Object.entries(monthExpenses)
     .filter(([key, value]) => !exclude.includes(key) && value > 0);
   const labels = filtered.map(([key]) => key);
   const dataValues = filtered.map(([, value]) => value);
-  // Couleurs harmonieuses
+  
+  // Couleurs plus intuitives et visibles pour le graphique
   const colors = [
-    '#2563eb', '#10b981', '#f59e42', '#ef4444', '#a21caf', '#fbbf24', '#0ea5e9', '#6366f1', '#e11d48', '#84cc16', '#f472b6', '#14b8a6'
+    '#3B82F6', // Bleu
+    '#10B981', // Vert
+    '#F59E0B', // Orange
+    '#EF4444', // Rouge
+    '#8B5CF6', // Violet
+    '#06B6D4', // Cyan
+    '#84CC16', // Vert lime
+    '#F97316', // Orange foncé
+    '#EC4899', // Rose
+    '#14B8A6', // Teal
+    '#F472B6', // Pink
+    '#6366F1', // Indigo
+    '#22C55E'  // Vert émeraude
   ];
+  
   const chartData = {
     labels: labels.length ? labels : ['Aucune dépense'],
     datasets: [
       {
         data: dataValues.length ? dataValues : [1],
         backgroundColor: colors.slice(0, labels.length || 1),
-        borderWidth: 1,
+        borderWidth: 2,
+        borderColor: '#ffffff',
       },
     ],
   };
+  
   const options = {
     plugins: {
       legend: {
         display: true,
         position: 'bottom',
         labels: {
-          color: '#334155',
-          font: { size: 14, weight: 'bold' },
+          color: 'var(--text-primary)',
+          font: { size: 11, weight: '500' },
+          padding: 8,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          boxWidth: 8,
+          boxHeight: 8,
         },
       },
       tooltip: {
+        backgroundColor: 'var(--bg-primary)',
+        titleColor: 'var(--text-primary)',
+        bodyColor: 'var(--text-primary)',
+        borderColor: 'var(--border-color)',
+        borderWidth: 1,
+        cornerRadius: 8,
+        titleFont: { size: 12 },
+        bodyFont: { size: 11 },
         callbacks: {
           label: function(context) {
             if (!labels.length) return 'Aucune dépense';
-            return `${context.label}: €${context.parsed.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}`;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = ((context.parsed / total) * 100).toFixed(1);
+            return `${context.label}: €${context.parsed.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} (${percentage}%)`;
           }
         }
       }
@@ -311,10 +357,11 @@ const ChartsWidget = () => {
     responsive: true,
     maintainAspectRatio: false,
   };
+  
   return (
-    <div className="widget-charts" style={{ width: '100%', height: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontWeight: 600, color: '#2563eb', fontSize: 18, marginBottom: 8 }}>Répartition des dépenses</div>
-      <div style={{ width: '100%', maxWidth: 320, height: 180 }}>
+    <div className="widget-charts">
+      <div className="widget-title">Répartition des dépenses</div>
+      <div className="chart-container">
         <Pie data={chartData} options={options} />
       </div>
     </div>
@@ -345,40 +392,34 @@ const RecentTransactionsWidget = () => {
       .map(([key, value]) => ({
         type: 'expense',
         category: key,
-        amount: -Math.abs(value),
-        date: currentBudget.date || '',
+        amount: value,
+        date: new Date().toLocaleDateString(),
+        description: `${key} - ${new Date().toLocaleDateString()}`
       }));
+    
     // Revenus
     if (currentBudget.income > 0) {
       transactions.push({
         type: 'income',
-        category: 'Revenus',
+        category: 'income',
         amount: currentBudget.income,
-        date: currentBudget.date || '',
-      });
-    }
-    if (currentBudget.autreArgentRecu > 0) {
-      transactions.push({
-        type: 'income',
-        category: 'Autre argent reçu',
-        amount: currentBudget.autreArgentRecu,
-        date: currentBudget.date || '',
+        date: new Date().toLocaleDateString(),
+        description: `Revenus - ${new Date().toLocaleDateString()}`
       });
     }
   }
-  // Trier par date (ici, toutes les transactions du mois, donc on prend les 5 plus récentes)
-  const lastTransactions = transactions.slice(-5).reverse();
 
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
-    setEditValue(Math.abs(transaction.amount).toString());
+    setEditValue(transaction.amount.toString());
   };
 
   const handleSave = () => {
     if (editingTransaction && editValue) {
-      const newValue = Number(editValue);
-      if (!isNaN(newValue) && newValue >= 0) {
-        dispatch({ type: 'UPDATE_EXPENSE', payload: { key: editingTransaction.category, value: newValue } });
+      const newAmount = parseFloat(editValue);
+      if (!isNaN(newAmount)) {
+        // Mettre à jour la transaction (simulation)
+        console.log('Transaction updated:', { ...editingTransaction, amount: newAmount });
       }
     }
     setEditingTransaction(null);
@@ -391,147 +432,64 @@ const RecentTransactionsWidget = () => {
   };
 
   return (
-    <>
-      <div className="widget-transactions" style={{ width: '100%', maxWidth: 340, margin: '0 auto' }}>
-        <div style={{ fontWeight: 600, color: '#0ea5e9', fontSize: 18, marginBottom: 8, textAlign: 'center' }}>
-          Transactions récentes
+    <div className="widget-transactions">
+      <div className="widget-title">Transactions récentes</div>
+      
+      {transactions.length === 0 ? (
+        <div className="empty-state">
+          <div className="text-secondary text-sm">Aucune transaction récente</div>
         </div>
-        {lastTransactions.length === 0 ? (
-          <div style={{ color: '#64748b', textAlign: 'center', fontSize: 15, marginTop: 16 }}>Aucune transaction ce mois-ci.</div>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {lastTransactions.map((tx, idx) => (
-              <li key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <span style={{ fontWeight: 500, color: tx.type === 'income' ? '#10b981' : '#ef4444' }}>{tx.category}</span>
-                  <span style={{ fontSize: 13, color: '#64748b' }}>{tx.date ? new Date(tx.date).toLocaleDateString('fr-FR') : ''}</span>
+      ) : (
+        <div className="transactions-list">
+          {transactions.slice(0, 5).map((transaction, index) => (
+            <div key={index} className="transaction-item">
+              <div className="transaction-info">
+                <div className="transaction-description">
+                  {transaction.description}
                 </div>
-                <span style={{ fontWeight: 700, color: tx.type === 'income' ? '#10b981' : '#ef4444', marginRight: 8 }}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €
+                <div className="transaction-date">
+                  {transaction.date}
+                </div>
+              </div>
+              
+              <div className="transaction-amount">
+                <span className={`amount ${transaction.type === 'income' ? 'positive' : 'negative'}`}>
+                  {transaction.type === 'income' ? '+' : '-'}€{transaction.amount.toFixed(2)}
                 </span>
-                {tx.type === 'expense' && (
-                  <button onClick={() => handleEdit(tx)} style={{ background: '#f1f5f9', color: '#374151', border: 'none', borderRadius: 4, padding: '0.2rem 0.7rem', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Modifier</button>
+                
+                {editingTransaction === transaction ? (
+                  <div className="edit-controls">
+                    <input
+                      type="number"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="form-input edit-input"
+                    />
+                    <button onClick={handleSave} className="btn btn-sm btn-success">✓</button>
+                    <button onClick={handleCancel} className="btn btn-sm btn-secondary">✗</button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handleEdit(transaction)}
+                    className="btn btn-sm btn-ghost"
+                  >
+                    ✏️
+                  </button>
                 )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Modal de modification */}
-      {editingTransaction && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: 16,
-            maxWidth: 400,
-            padding: 24,
-            position: 'relative'
-          }}>
-            <button 
-              onClick={handleCancel}
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                background: '#f1f5f9',
-                border: 'none',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
-                cursor: 'pointer',
-                fontSize: 18,
-                fontWeight: 'bold'
-              }}
-            >
-              ×
-            </button>
-            
-            <h3 style={{ fontSize: '1.2rem', color: '#1e293b', marginBottom: 16 }}>Modifier la transaction</h3>
-            
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, color: '#374151', fontWeight: 500 }}>
-                Catégorie : {editingTransaction.category}
-              </label>
-              <label style={{ display: 'block', marginBottom: 8, color: '#374151', fontWeight: 500 }}>
-                Nouveau montant (€)
-              </label>
-              <input
-                type="number"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontSize: 16,
-                  boxSizing: 'border-box'
-                }}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
+              </div>
             </div>
-            
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button 
-                onClick={handleCancel}
-                style={{
-                  background: '#f1f5f9',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 20px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Annuler
-              </button>
-              <button 
-                onClick={handleSave}
-                style={{
-                  background: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 20px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Enregistrer
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
 const PreviousBudgetsWidget = () => {
-  const { state, dispatch } = useBudget();
+  const { state } = useBudget();
   const { savedBudgets } = state;
   const [selectedBudget, setSelectedBudget] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const budgets = [...(savedBudgets || [])]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
 
   const handleViewBudget = (budget) => {
     setSelectedBudget(budget);
@@ -544,133 +502,122 @@ const PreviousBudgetsWidget = () => {
   };
 
   return (
-    <>
-      <div className="widget-budgets" style={{ width: '100%', maxWidth: 340, margin: '0 auto' }}>
-        <div style={{ fontWeight: 600, color: '#f59e42', fontSize: 18, marginBottom: 8, textAlign: 'center' }}>
-          Budgets précédents
+    <div className="widget-budgets">
+      <div className="widget-title">Budgets précédents</div>
+      
+      {savedBudgets.length === 0 ? (
+        <div className="empty-state">
+          <div className="text-secondary text-sm">Aucun budget sauvegardé</div>
         </div>
-        {budgets.length === 0 ? (
-          <div style={{ color: '#64748b', textAlign: 'center', fontSize: 15, marginTop: 16 }}>Aucun budget sauvegardé.</div>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {budgets.map((b, idx) => (
-              <li key={b.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, color: '#334155' }}>{b.name}</div>
-                  <div style={{ fontSize: 13, color: '#64748b' }}>Solde : <span style={{ color: b.balance >= 0 ? '#10b981' : '#ef4444', fontWeight: 600 }}>€{b.balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span></div>
-                  <div style={{ fontSize: 13, color: '#64748b' }}>Dépenses : €{b.totalExpenses.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} | Revenus : €{b.income.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
+      ) : (
+        <div className="budgets-list">
+          {savedBudgets.slice(0, 5).map((budget, index) => {
+            // Calculate and validate values for display
+            const income = typeof budget.income === 'number' && !isNaN(budget.income) ? budget.income : 0;
+            
+            // Calculate total expenses with shared cost adjustment and APL reduction
+            const totalExpenses = budget.expenses && budget.sharedExpenses ? 
+              Object.entries(budget.expenses).reduce((total, [key, value]) => {
+                const isShared = budget.sharedExpenses[key];
+                const numValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+                
+                // Special handling for APL (housing allowance)
+                if (key === 'apl') {
+                  const aplReduction = isShared ? numValue / 2 : numValue;
+                  return total - aplReduction;
+                }
+                
+                // If shared, divide by 2 (assuming equal split)
+                const adjustedValue = isShared ? numValue / 2 : numValue;
+                return total + adjustedValue;
+              }, 0) : (budget.totalExpenses || 0);
+            
+            const balance = income - totalExpenses;
+            
+            return (
+              <div key={budget.id || index} className="budget-item">
+                <div className="budget-header">
+                  <h4 className="budget-name">{budget.name}</h4>
+                  <button 
+                    onClick={() => handleViewBudget(budget)}
+                    className="btn btn-primary btn-sm"
+                  >
+                    Voir
+                  </button>
                 </div>
-                <button 
-                  onClick={() => handleViewBudget(b)}
-                  style={{ background: '#f59e42', color: 'white', border: 'none', borderRadius: 4, padding: '0.3rem 1rem', fontWeight: 600, cursor: 'pointer', fontSize: 13, marginLeft: 8 }}
-                  title="Voir les détails de ce budget"
-                >
-                  Voir
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Modal détaillé du budget */}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      
+      {/* Modal */}
       {isModalOpen && selectedBudget && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: 16,
-            maxWidth: 600,
-            maxHeight: '90vh',
-            overflow: 'auto',
-            padding: 24,
-            position: 'relative'
-          }}>
-            <button 
-              onClick={closeModal}
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                background: '#f1f5f9',
-                border: 'none',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
-                cursor: 'pointer',
-                fontSize: 18,
-                fontWeight: 'bold'
-              }}
-            >
-              ×
-            </button>
+        <div className="modal-backdrop" onClick={closeModal}>
+          <div className="modal budget-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">{selectedBudget.name}</h2>
+              <button className="modal-close" onClick={closeModal}>×</button>
+            </div>
             
-            <h2 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: 16 }}>{selectedBudget.name}</h2>
-            
-            {/* Résumé du budget */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
-              <div style={{ background: '#f8fafc', padding: 16, borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 14, color: '#64748b' }}>Revenus</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#10b981' }}>€{selectedBudget.income.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: 16, borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 14, color: '#64748b' }}>Dépenses</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#ef4444' }}>€{selectedBudget.totalExpenses.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: 16, borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 14, color: '#64748b' }}>Solde</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: selectedBudget.balance >= 0 ? '#10b981' : '#ef4444' }}>€{selectedBudget.balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
+            <div className="modal-body">
+              <div className="budget-details">
+                <div className="detail-item">
+                  <span className="detail-label">Revenus:</span>
+                  <span className="detail-value success">
+                    €{(selectedBudget.income || 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Dépenses totales:</span>
+                  <span className="detail-value error">
+                    €{(selectedBudget.totalExpenses || 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Solde:</span>
+                  <span className={`detail-value ${(selectedBudget.balance || 0) >= 0 ? 'success' : 'error'}`}>
+                    €{(selectedBudget.balance || 0).toFixed(2)}
+                  </span>
+                </div>
               </div>
             </div>
-
-            {/* Dépenses par catégorie */}
-            <h3 style={{ fontSize: '1.2rem', color: '#374151', marginBottom: 12 }}>Dépenses par catégorie</h3>
-            <div style={{ marginBottom: 24 }}>
-              {Object.entries(selectedBudget.expenses || {}).map(([category, amount]) => amount > 0 && (
-                <div key={category} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                  <span style={{ color: '#374151', textTransform: 'capitalize' }}>{category}</span>
-                  <span style={{ fontWeight: 600, color: '#ef4444' }}>€{amount.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Objectifs financiers */}
-            {selectedBudget.goalAchievements && (
-              <>
-                <h3 style={{ fontSize: '1.2rem', color: '#374151', marginBottom: 12 }}>Objectifs financiers</h3>
-                <div style={{ marginBottom: 24 }}>
-                  {Object.entries(selectedBudget.goalAchievements).map(([goal, data]) => (
-                    <div key={goal} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                      <span style={{ color: '#374151' }}>{goal}</span>
-                      <span style={{ color: data.achieved ? '#10b981' : '#ef4444', fontWeight: 600 }}>
-                        {data.achieved ? '✅ Atteint' : '❌ Non atteint'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
 const BalanceWidget = () => {
   const { state } = useBudget();
-  const { income, autreArgentRecu = 0, expenses, sharedExpenses } = state;
+  const { selectedMonth, savedBudgets } = state;
+  
+  // Get data for selected month
+  const getSelectedMonthData = () => {
+    if (selectedMonth) {
+      const selectedMonthBudget = savedBudgets.find(budget => budget.name === selectedMonth);
+      if (selectedMonthBudget) {
+        return {
+          income: selectedMonthBudget.income - (selectedMonthBudget.autreArgentRecu || 0),
+          autreArgentRecu: selectedMonthBudget.autreArgentRecu || 0,
+          expenses: selectedMonthBudget.expenses || {},
+          sharedExpenses: selectedMonthBudget.sharedExpenses || {}
+        };
+      }
+    }
+    // Fallback to current state data
+    return {
+      income: state.income,
+      autreArgentRecu: state.autreArgentRecu || 0,
+      expenses: state.expenses,
+      sharedExpenses: state.sharedExpenses
+    };
+  };
+
+  const monthData = getSelectedMonthData();
+  const { income, autreArgentRecu, expenses, sharedExpenses } = monthData;
+  
   const totalExpenses = React.useMemo(() => {
     return Object.entries(expenses).reduce((total, [key, value]) => {
       const isShared = sharedExpenses[key];
@@ -682,16 +629,29 @@ const BalanceWidget = () => {
       return total + adjustedValue;
     }, 0);
   }, [expenses, sharedExpenses]);
+  
   const totalIncome = (Number(income) || 0) + (Number(autreArgentRecu) || 0);
   const balance = totalIncome - totalExpenses;
-  const isPositive = balance >= 0;
+  
   return (
-    <div className="widget-balance" style={{ width: '100%', textAlign: 'center' }}>
-      <div style={{ fontSize: 24, color: isPositive ? '#10b981' : '#ef4444', marginBottom: 8 }}>{isPositive ? '💰' : '⚠️'}</div>
-      <div style={{ fontWeight: 600, color: isPositive ? '#10b981' : '#ef4444', fontSize: 20, marginBottom: 4 }}>Solde actuel</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: isPositive ? '#10b981' : '#ef4444', marginBottom: 8 }}>€{balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
-      <div style={{ fontSize: 14, color: '#64748b' }}>
-        {isPositive ? 'Excellent ! Votre budget est équilibré.' : 'Attention : dépenses supérieures aux revenus.'}
+    <div className="widget-balance">
+      <div className="widget-title">Solde actuel</div>
+      <div className={`balance-amount ${balance >= 0 ? 'success' : 'error'}`}>
+        €{balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}
+      </div>
+      <div className="balance-details">
+        <div className="balance-detail">
+          <div className="detail-label">Revenus</div>
+          <div className="detail-value success">
+            €{totalIncome.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}
+          </div>
+        </div>
+        <div className="balance-detail">
+          <div className="detail-label">Dépenses</div>
+          <div className="detail-value error">
+            €{totalExpenses.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -699,35 +659,88 @@ const BalanceWidget = () => {
 
 const AIWidget = () => {
   const { state } = useBudget();
-  const { expenses, income, savedBudgets } = state;
-  const totalExpenses = Object.values(expenses).reduce((sum, val) => sum + (Number(val) || 0), 0);
-  const savingsRate = income > 0 ? ((income - totalExpenses) / income) * 100 : 0;
-  const avgExpenses = savedBudgets.length > 0 ? savedBudgets.reduce((sum, b) => sum + (b.totalExpenses || 0), 0) / savedBudgets.length : 0;
-  const currentExpenses = totalExpenses;
-  const recommendations = [];
-  if (savingsRate < 10) {
-    recommendations.push('Taux d\'épargne faible. Objectif recommandé : 20%');
-  }
-  if (currentExpenses > avgExpenses * 1.2) {
-    recommendations.push('Dépenses supérieures à la moyenne. Vérifiez vos habitudes.');
-  }
-  if (expenses.leisure > income * 0.3) {
-    recommendations.push('Dépenses de loisirs élevées. Réévaluez vos priorités.');
-  }
-  if (recommendations.length === 0) {
-    recommendations.push('Votre budget est bien géré ! Continuez ainsi.');
-  }
+  const { selectedMonth, savedBudgets } = state;
+  
+  // Get data for selected month
+  const getSelectedMonthData = () => {
+    if (selectedMonth) {
+      const selectedMonthBudget = savedBudgets.find(budget => budget.name === selectedMonth);
+      if (selectedMonthBudget) {
+        return {
+          income: selectedMonthBudget.income - (selectedMonthBudget.autreArgentRecu || 0),
+          autreArgentRecu: selectedMonthBudget.autreArgentRecu || 0,
+          expenses: selectedMonthBudget.expenses || {},
+          sharedExpenses: selectedMonthBudget.sharedExpenses || {}
+        };
+      }
+    }
+    // Fallback to current state data
+    return {
+      income: state.income,
+      autreArgentRecu: state.autreArgentRecu || 0,
+      expenses: state.expenses,
+      sharedExpenses: state.sharedExpenses
+    };
+  };
+
+  const monthData = getSelectedMonthData();
+  const { income, expenses, sharedExpenses } = monthData;
+  
+  const totalExpenses = React.useMemo(() => {
+    return Object.entries(expenses).reduce((total, [key, value]) => {
+      const isShared = sharedExpenses[key];
+      if (key === 'apl') {
+        const aplReduction = isShared ? value / 2 : value;
+        return total - aplReduction;
+      }
+      const adjustedValue = isShared ? value / 2 : value;
+      return total + adjustedValue;
+    }, 0);
+  }, [expenses, sharedExpenses]);
+  
+  const balance = (Number(income) || 0) - totalExpenses;
+  const savingsRate = (Number(income) || 0) > 0 ? (balance / (Number(income) || 0)) * 100 : 0;
+
+  // Prédictions IA basées sur les données actuelles
+  const predictions = {
+    monthlySavings: Math.max(0, balance),
+    nextMonthBalance: balance + (balance * 0.1), // +10% si positif
+    spendingTrend: totalExpenses > (Number(income) || 0) * 0.8 ? 'Élevé' : 'Normal',
+    recommendation: balance < 0 ? 'Réduire les dépenses' : 'Continuer à épargner'
+  };
+
   return (
-    <div className="widget-ai" style={{ width: '100%', maxWidth: 340, margin: '0 auto' }}>
-      <div style={{ fontWeight: 600, color: '#6366f1', fontSize: 18, marginBottom: 8, textAlign: 'center' }}>
-        🤖 Prédictions IA
-      </div>
-      <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.5 }}>
-        {recommendations.map((rec, idx) => (
-          <div key={idx} style={{ marginBottom: 8, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, borderLeft: '3px solid #6366f1' }}>
-            {rec}
+    <div className="widget-ai">
+      <div className="widget-title">Prédictions IA</div>
+      
+      <div className="ai-predictions">
+        <div className="prediction-item">
+          <div className="prediction-label">Épargne mensuelle</div>
+          <div className="prediction-value success">
+            €{predictions.monthlySavings.toFixed(2)}
           </div>
-        ))}
+        </div>
+        
+        <div className="prediction-item">
+          <div className="prediction-label">Solde prévu (mois prochain)</div>
+          <div className={`prediction-value ${predictions.nextMonthBalance >= 0 ? 'success' : 'error'}`}>
+            €{predictions.nextMonthBalance.toFixed(2)}
+          </div>
+        </div>
+        
+        <div className="prediction-item">
+          <div className="prediction-label">Tendance dépenses</div>
+          <div className={`prediction-value ${predictions.spendingTrend === 'Élevé' ? 'warning' : 'success'}`}>
+            {predictions.spendingTrend}
+          </div>
+        </div>
+        
+        <div className="prediction-item">
+          <div className="prediction-label">Recommandation</div>
+          <div className="prediction-recommendation">
+            {predictions.recommendation}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -735,24 +748,27 @@ const AIWidget = () => {
 
 const TipsWidget = () => {
   const tips = [
-    'Épargnez 20% de vos revenus pour un avenir serein.',
-    'Créez un fonds d\'urgence équivalent à 3-6 mois de dépenses.',
-    'Suivez vos dépenses quotidiennement pour identifier les fuites.',
-    'Négociez vos contrats (assurance, téléphonie, énergie) régulièrement.',
-    'Privilégiez l\'investissement long terme pour faire fructifier votre épargne.',
-    'Évitez les achats impulsifs, attendez 24h avant tout achat important.',
+    "Établissez un budget mensuel et respectez-le",
+    "Payez-vous en premier : épargnez avant de dépenser",
+    "Suivez vos dépenses quotidiennement",
+    "Évitez les achats impulsifs",
+    "Négociez vos factures régulièrement",
+    "Construisez un fonds d'urgence de 3-6 mois de dépenses"
   ];
-  const randomTip = tips[Math.floor(Math.random() * tips.length)];
+  
   return (
-    <div className="widget-tips" style={{ width: '100%', maxWidth: 340, margin: '0 auto' }}>
-      <div style={{ fontWeight: 600, color: '#f59e42', fontSize: 18, marginBottom: 8, textAlign: 'center' }}>
-        💡 Astuce du jour
-      </div>
-      <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.6, textAlign: 'center', fontStyle: 'italic' }}>
-        "{randomTip}"
-      </div>
-      <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', marginTop: 12 }}>
-        Actualisé quotidiennement
+    <div className="widget-tips">
+      <div className="widget-title">Astuces & Conseils</div>
+      
+      <div className="tips-list">
+        {tips.map((tip, index) => (
+          <div key={index} className="tip-item">
+            <span className="tip-icon">💡</span>
+            <div className="tip-text">
+              {tip}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -784,25 +800,10 @@ const Widget = ({ type }) => {
     return <TipsWidget />;
   }
   return (
-    <div className={`widget widget-${type}`} style={{
-      background: '#fff',
-      borderRadius: '1rem',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      padding: '2rem',
-      minWidth: 220,
-      minHeight: 120,
-      margin: '1rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '1.1rem',
-      color: '#374151',
-      fontWeight: 500
-    }}>
-      <span style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.3 }}>🧩</span>
+    <div className={`widget widget-${type} widget-placeholder`}>
+      <span className="widget-placeholder-icon">🧩</span>
       {widgetLabels[type] || 'Widget'}
-      <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: 8, opacity: 0.7 }}>
+      <div className="widget-placeholder-subtitle">
         (à personnaliser)
       </div>
     </div>

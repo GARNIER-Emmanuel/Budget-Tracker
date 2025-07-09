@@ -18,9 +18,7 @@ import { translations } from './translations';
 import CustomizableDashboard from './components/CustomizableDashboard';
 import BankStatementImporter from './components/BankStatementImporter';
 import './App.css';
-import Sidebar from './components/Sidebar';
-import RightSidebar from './components/RightSidebar';
-import Layout from './components/Layout';
+import './styles/design-system.css';
 
 function AppContent() {
   const { state, dispatch } = useBudget();
@@ -333,115 +331,32 @@ function AppContent() {
   }, []);
 
   return (
-    <Layout
-      sidebarLeft={
-        <Sidebar
-          currentPage={currentPage}
-          onPageChange={(page) => dispatch({ type: BUDGET_ACTIONS.SET_CURRENT_PAGE, payload: page })}
-          currentLanguage={currentLanguage}
-          onLanguageChange={(lang) => dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: lang })}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={handleDarkModeToggle}
-          translations={translations}
-          collapsed={sidebarCollapsed}
-          setCollapsed={setSidebarCollapsed}
-        />
-      }
-      main={
-        <div className="main-content" style={{ paddingBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-          {currentPage === 'dashboard' && <CustomizableDashboard />}
-          {currentPage === 'tracker' && <BankStatementImporter />}
-          {currentPage === 'comparison' && (
-            <BudgetComparison
-              translations={translations}
-              currentLanguage={currentLanguage}
-              savedBudgets={savedBudgets}
-              isDarkMode={isDarkMode}
-            />
-          )}
-        </div>
-      }
-      sidebarRight={
-        <RightSidebar title="Outils" collapsed={false}>
-          {/* Sélecteur de mois */}
-          <section className="rsb-section rsb-month-section">
-            <MonthSelector
-              selectedMonth={selectedMonth}
-              onMonthChange={handleMonthChange}
-              savedBudgets={savedBudgets}
-              translations={translations}
-              currentLanguage={currentLanguage}
-            />
-          </section>
-          {/* Entrées de revenus */}
-          <section className="rsb-section rsb-income-section">
-            <div className="rsb-section-title">{translations[currentLanguage].monthlyIncome}</div>
-            <div className="rsb-input-row">
-              <span className="currency">€</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={incomeInput}
-                onChange={e => setIncomeInput(e.target.value)}
-                onBlur={() => {
-                  const val = incomeInput.replace(',', '.');
-                  const num = Number(val);
-                  dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: isNaN(num) ? 0 : num });
-                  setIncomeInput(isNaN(num) || num === 0 ? '' : String(num));
-                }}
-                className="rsb-input"
-                placeholder="0"
-              />
-            </div>
-            <div className="rsb-input-row" style={{ marginTop: '0.5rem' }}>
-              <span className="currency">€</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={autreArgentInput}
-                onChange={e => setAutreArgentInput(e.target.value)}
-                onBlur={() => {
-                  const val = autreArgentInput.replace(',', '.');
-                  const num = Number(val);
-                  dispatch({ type: 'UPDATE_AUTRE_ARGENT_RECU', payload: isNaN(num) ? 0 : num });
-                  setAutreArgentInput(isNaN(num) || num === 0 ? '' : String(num));
-                }}
-                className="rsb-input"
-                placeholder={translations[currentLanguage].otherIncome || 'Autre argent reçu'}
-              />
-            </div>
-          </section>
-          {/* Objectifs financiers */}
-          <FinancialGoals
+    <div className="app-container">
+      <Navigation
+        currentPage={currentPage}
+        onPageChange={(page) => dispatch({ type: BUDGET_ACTIONS.SET_CURRENT_PAGE, payload: page })}
+        currentLanguage={currentLanguage}
+        onLanguageChange={(lang) => dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: lang })}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={handleDarkModeToggle}
+        translations={translations}
+      />
+      
+      <main className="main-content">
+        {currentPage === 'dashboard' && <CustomizableDashboard />}
+        {currentPage === 'tracker' && <BankStatementImporter />}
+        {currentPage === 'comparison' && (
+          <BudgetComparison
             translations={translations}
             currentLanguage={currentLanguage}
+            savedBudgets={savedBudgets}
+            isDarkMode={isDarkMode}
           />
-          {/* Data Manager */}
-          <DataManager
-            translations={translations}
-            currentLanguage={currentLanguage}
-          />
-          {/* Expense Inputs */}
-          <div style={{ marginTop: '2rem' }}>
-            {Object.entries(expenseCategories).map(([category, expenseKeys], index) => (
-              <div key={category} style={{ marginBottom: index < Object.keys(expenseCategories).length - 1 ? '2rem' : '0' }}>
-                <CollapsibleExpenseCategory
-                  category={category}
-                  expenseKeys={expenseKeys}
-                  expenses={expenses}
-                  onExpenseChange={handleExpenseChange}
-                  sharedExpenses={sharedExpenses}
-                  onSharedChange={handleSharedChange}
-                  translations={translations}
-                  currentLanguage={currentLanguage}
-                />
-              </div>
-            ))}
-          </div>
-        </RightSidebar>
-      }
-      className={sidebarCollapsed ? 'sidebar-collapsed' : ''}
-    />
+        )}
+      </main>
+      
+      <NotificationSystem />
+    </div>
   );
 }
 
