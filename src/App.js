@@ -26,6 +26,7 @@ function AppContent() {
   const {
     currentLanguage,
     isDarkMode,
+    currentTheme,
     currentPage,
     income,
     expenses,
@@ -337,8 +338,8 @@ function AppContent() {
         onPageChange={(page) => dispatch({ type: BUDGET_ACTIONS.SET_CURRENT_PAGE, payload: page })}
         currentLanguage={currentLanguage}
         onLanguageChange={(lang) => dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: lang })}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={handleDarkModeToggle}
+        currentTheme={currentTheme}
+        onThemeChange={(theme) => dispatch({ type: BUDGET_ACTIONS.SET_THEME, payload: theme.id })}
         translations={translations}
       />
       

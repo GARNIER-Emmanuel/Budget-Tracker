@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { FaChartPie, FaThLarge, FaExchangeAlt, FaWallet, FaBars, FaTimes } from 'react-icons/fa';
 import LanguageSelector from './LanguageSelector';
+import ThemeSelector from './ThemeSelector';
 
 const Navigation = ({ 
   currentPage, 
   onPageChange, 
   translations, 
   currentLanguage,
-  onLanguageChange
+  onLanguageChange,
+  currentTheme,
+  onThemeChange
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -92,6 +95,12 @@ const Navigation = ({
             currentLanguage={currentLanguage} 
             onLanguageChange={onLanguageChange} 
             translations={translations} 
+          />
+          <ThemeSelector 
+            currentTheme={currentTheme} 
+            onThemeChange={onThemeChange} 
+            translations={translations} 
+            currentLanguage={currentLanguage} 
           />
         </div>
       </nav>

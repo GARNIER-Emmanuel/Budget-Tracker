@@ -51,6 +51,15 @@ export const translations = {
     english: "English",
     french: "French",
     
+    // Theme selector
+    theme: "Theme",
+    selectTheme: "Select a theme",
+    defaultTheme: "Default",
+    blueTheme: "Blue",
+    greenTheme: "Green",
+    orangeTheme: "Orange",
+    grayTheme: "Gray",
+    
     // PDF download
     downloadPDF: "Download PDF Report",
     
@@ -416,6 +425,15 @@ export const translations = {
     language: "Langue",
     english: "Anglais",
     french: "Français",
+    
+    // Theme selector
+    theme: "Thème",
+    selectTheme: "Sélectionner un thème",
+    defaultTheme: "Par défaut",
+    blueTheme: "Bleu",
+    greenTheme: "Vert",
+    orangeTheme: "Orange",
+    grayTheme: "Gris",
     
     // PDF download
     downloadPDF: "Télécharger le rapport PDF",

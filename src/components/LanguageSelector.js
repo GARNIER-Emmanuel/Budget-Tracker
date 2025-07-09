@@ -1,23 +1,23 @@
 import React from 'react';
+import { FaGlobe } from 'react-icons/fa';
 
 const LanguageSelector = ({ currentLanguage, onLanguageChange, translations }) => {
   const t = translations[currentLanguage] || {};
   
+  const handleLanguageToggle = () => {
+    const newLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
+    onLanguageChange(newLanguage);
+  };
+  
   return (
-    <div className="language-selector">
-      <label htmlFor="language-select" className="language-label">
-        {t.language || 'Language'}:
-      </label>
-      <select
-        id="language-select"
-        value={currentLanguage}
-        onChange={(e) => onLanguageChange(e.target.value)}
-        className="language-select"
-      >
-        <option value="en">{t.english || 'English'}</option>
-        <option value="fr">{t.french || 'French'}</option>
-      </select>
-    </div>
+    <button
+      className="language-toggle"
+      onClick={handleLanguageToggle}
+      title={currentLanguage === 'fr' ? 'Switch to English' : 'Passer en français'}
+    >
+      <FaGlobe className="language-icon" />
+      <span className="language-label">{currentLanguage.toUpperCase()}</span>
+    </button>
   );
 };
 

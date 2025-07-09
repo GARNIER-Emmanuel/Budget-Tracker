@@ -6,6 +6,7 @@ const initialState = {
   // Language and UI
   currentLanguage: 'fr',
   isDarkMode: false,
+  currentTheme: 'default',
   currentPage: 'tracker',
   
   // Budget data
@@ -86,6 +87,7 @@ const initialState = {
 export const BUDGET_ACTIONS = {
   SET_LANGUAGE: 'SET_LANGUAGE',
   TOGGLE_DARK_MODE: 'TOGGLE_DARK_MODE',
+  SET_THEME: 'SET_THEME',
   SET_CURRENT_PAGE: 'SET_CURRENT_PAGE',
   UPDATE_INCOME: 'UPDATE_INCOME',
   UPDATE_EXPENSE: 'UPDATE_EXPENSE',
@@ -118,6 +120,10 @@ const budgetReducer = (state, action) => {
       const newDarkMode = !state.isDarkMode;
       localStorage.setItem('darkMode', JSON.stringify(newDarkMode));
       return { ...state, isDarkMode: newDarkMode };
+      
+    case BUDGET_ACTIONS.SET_THEME:
+      localStorage.setItem('currentTheme', action.payload);
+      return { ...state, currentTheme: action.payload };
       
     case BUDGET_ACTIONS.SET_CURRENT_PAGE:
       return { ...state, currentPage: action.payload };
@@ -379,6 +385,14 @@ export const BudgetProvider = ({ children }) => {
         dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: savedLanguage });
       }
     }
+
+    // Load theme preference
+    const savedTheme = localStorage.getItem('currentTheme');
+    if (savedTheme && ['default', 'blue', 'green', 'orange', 'gray'].includes(savedTheme)) {
+      if (savedTheme !== state.currentTheme) {
+        dispatch({ type: BUDGET_ACTIONS.SET_THEME, payload: savedTheme });
+      }
+    }
   }, []);
 
   // Apply dark mode class to body
@@ -394,6 +408,11 @@ export const BudgetProvider = ({ children }) => {
   useEffect(() => {
     document.documentElement.lang = state.currentLanguage;
   }, [state.currentLanguage]);
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', state.currentTheme);
+  }, [state.currentTheme]);
 
   // Auto-save functionality
   useEffect(() => {
