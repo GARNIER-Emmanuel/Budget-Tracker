@@ -6,28 +6,28 @@ import DataManager from './DataManager';
 import BudgetInputPanel from './BudgetInputPanel';
 
 // Liste des catégories disponibles (à adapter si besoin)
-const CATEGORY_OPTIONS = [
-  { key: 'income', label: 'Salaire / Crédit' },
-  { key: 'autreArgentRecu', label: 'Autre argent reçu' },
-  { key: 'rent', label: 'Loyer' },
-  { key: 'apl', label: 'APL' },
-  { key: 'electricity', label: 'Électricité' },
-  { key: 'internet', label: 'Internet' },
-  { key: 'phone', label: 'Téléphone' },
-  { key: 'subscriptions', label: 'Abonnements' },
-  { key: 'insuranceHome', label: 'Assurance habitation' },
-  { key: 'insuranceCar', label: 'Assurance voiture' },
-  { key: 'gym', label: 'Salle de sport' },
-  { key: 'food', label: 'Alimentation' },
-  { key: 'gas', label: 'Essence' },
-  { key: 'catFood', label: 'Nourriture chat' },
-  { key: 'leisure', label: 'Loisirs' },
-  { key: 'shopping', label: 'Shopping' },
-  { key: 'fraisBancaire', label: 'Frais bancaire' },
-  { key: 'imprevu', label: 'Imprévu' },
-  { key: 'savings', label: 'Épargne' },
-  { key: 'unforeseen', label: 'Fonds d\'urgence' },
-  { key: 'other', label: 'Autre (non catégorisé)' },
+const CATEGORY_OPTIONS = (t) => [
+  { key: 'income', label: t.income || 'Salaire / Crédit' },
+  { key: 'autreArgentRecu', label: t.otherIncome || 'Autre argent reçu' },
+  { key: 'rent', label: t.rent || 'Loyer' },
+  { key: 'apl', label: t.apl || 'APL' },
+  { key: 'electricity', label: t.electricity || 'Électricité' },
+  { key: 'internet', label: t.internet || 'Internet' },
+  { key: 'phone', label: t.phone || 'Téléphone' },
+  { key: 'subscriptions', label: t.subscriptions || 'Abonnements' },
+  { key: 'insuranceHome', label: t.insuranceHome || 'Assurance habitation' },
+  { key: 'insuranceCar', label: t.insuranceCar || 'Assurance voiture' },
+  { key: 'gym', label: t.gym || 'Salle de sport' },
+  { key: 'food', label: t.food || 'Alimentation' },
+  { key: 'gas', label: t.gas || 'Essence' },
+  { key: 'catFood', label: t.catFood || 'Nourriture chat' },
+  { key: 'leisure', label: t.leisure || 'Loisirs' },
+  { key: 'shopping', label: t.shopping || 'Shopping' },
+  { key: 'fraisBancaire', label: t.fraisBancaire || 'Frais bancaire' },
+  { key: 'imprevu', label: t.imprevu || 'Imprévu' },
+  { key: 'savings', label: t.savings || 'Épargne' },
+  { key: 'unforeseen', label: t.unforeseen || 'Fonds d\'urgence' },
+  { key: 'other', label: t.other || 'Autre (non catégorisé)' },
 ];
 
 // Récupère le mapping existant ou initialise
@@ -227,7 +227,7 @@ const BankStatementImporter = () => {
         importedIncome = tx.amount;
       } else if (tx.category === 'autreArgentRecu') {
         importedAutreArgent = tx.amount;
-      } else if (CATEGORY_OPTIONS.some(opt => opt.key === tx.category && tx.category !== 'other')) {
+      } else if (CATEGORY_OPTIONS(t).some(opt => opt.key === tx.category && opt.key !== 'other')) {
         if (!categorySums[tx.category]) categorySums[tx.category] = 0;
         categorySums[tx.category] += Math.abs(tx.amount);
       }
@@ -235,7 +235,7 @@ const BankStatementImporter = () => {
     // 2. Remet à zéro toutes les catégories (dépenses, income, autreArgentRecu)
     dispatch({ type: BUDGET_ACTIONS.UPDATE_INCOME, payload: importedIncome !== null ? importedIncome : 0 });
     dispatch({ type: BUDGET_ACTIONS.UPDATE_AUTRE_ARGENT_RECU, payload: importedAutreArgent !== null ? importedAutreArgent : 0 });
-    CATEGORY_OPTIONS.forEach(opt => {
+    CATEGORY_OPTIONS(t).forEach(opt => {
       if (opt.key !== 'income' && opt.key !== 'autreArgentRecu' && opt.key !== 'other') {
         dispatch({ type: BUDGET_ACTIONS.UPDATE_EXPENSE, payload: { key: opt.key, value: categorySums[opt.key] || 0 } });
       }
@@ -291,8 +291,8 @@ const BankStatementImporter = () => {
     // Add notification
     const existingBudgetIndex = state.savedBudgets.findIndex(budget => budget.name === monthKey);
     const message = existingBudgetIndex !== -1 
-      ? (t.budgetUpdated || 'Budget mis à jour avec succès !')
-      : (t.budgetSaved || 'Budget sauvegardé avec succès !');
+      ? (t.budgetUpdated || 'Budget updated successfully!')
+      : (t.budgetSaved || 'Budget saved successfully!');
     
     dispatch({
       type: BUDGET_ACTIONS.ADD_NOTIFICATION,
@@ -392,14 +392,14 @@ const BankStatementImporter = () => {
   return (
     <div className="tracker-container">
       <header className="page-header">
-        <h1 className="page-title">{t.trackerTitle || 'Suivi mensuel'}</h1>
-        <p className="page-description">{t.trackerDesc || 'Importez vos relevés, saisissez vos dépenses et suivez votre budget en temps réel.'}</p>
+        <h1 className="page-title">{t.trackerTitle || 'Monthly Tracking'}</h1>
+        <p className="page-description">{t.trackerDesc || 'Import your statements, enter your expenses and track your budget in real time.'}</p>
         <div className="page-actions">
-          <button 
+          <button
             className="btn btn-primary btn-large"
             onClick={handleSaveBudget}
           >
-            💾 {t.saveBudget || 'Sauvegarder le budget'}
+            💾 {t.saveBudget || 'Save Budget'}
           </button>
         </div>
       </header>
@@ -410,7 +410,7 @@ const BankStatementImporter = () => {
           <section className="card import-section">
             <h2 className="card-title">
               <FaFileImport className="section-icon" />
-              {t.importSection || 'Import de relevé bancaire'}
+              {t.importSection || 'Bank Statement Import'}
             </h2>
             
             <div className="import-controls">
@@ -419,7 +419,7 @@ const BankStatementImporter = () => {
                 onClick={() => fileInputRef.current && fileInputRef.current.click()}
               >
                 <FaFileImport className="btn-icon" />
-                {t.importFileButton || 'Importer un fichier'}
+                {t.importFileButton || 'Import File'}
               </button>
               <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFile} className="hidden-input" />
             </div>
@@ -427,63 +427,63 @@ const BankStatementImporter = () => {
             {importError && <div className="error-message">{importError}</div>}
             
             <div className="import-help">
-              {t.importHelp || 'Importez un fichier CSV avec les colonnes Date, Libellé, Montant.'}
+              {t.importHelp || 'Import a CSV file with Date, Label, Amount columns.'}
             </div>
             
             {transactions.length > 0 && (
               <div className="transactions-table-container">
                 <table className="transactions-table">
                   <thead>
-                    <tr>
+              <tr>
                       <th>{t.importDateHeader || 'Date'}</th>
                       <th>{t.importLabelHeader || 'Libellé'}</th>
                       <th>{t.importAmountHeader || 'Montant'}</th>
                       <th>{t.importCategoryHeader || 'Catégorie'}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((tx, idx) => (
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((tx, idx) => (
                       <tr key={idx} className="transaction-row">
                         <td>{tx.date}</td>
                         <td>{tx.label}</td>
                         <td className={`amount ${tx.amount < 0 ? 'negative' : 'positive'}`}>
-                          {tx.amount}
-                          <button
+                    {tx.amount}
+                    <button
                             className="btn btn-sm btn-secondary toggle-amount"
                             title={t.importToggleAmount || 'Inverser débit/crédit'}
-                            onClick={() => setTransactions(txs => txs.map((t, i) => i === idx ? { ...t, amount: -t.amount } : t))}
-                          >
-                            ↔️
-                          </button>
-                        </td>
+                      onClick={() => setTransactions(txs => txs.map((t, i) => i === idx ? { ...t, amount: -t.amount } : t))}
+                    >
+                      ↔️
+                    </button>
+                  </td>
                         <td>
                           <select 
                             value={tx.category} 
                             onChange={e => handleCategoryChange(idx, e.target.value)}
                             className="form-select"
                           >
-                            {CATEGORY_OPTIONS.map(opt => (
-                              <option key={opt.key} value={opt.key}>{opt.label}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            {CATEGORY_OPTIONS(t).map(opt => (
+                        <option key={opt.key} value={opt.key}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
                 
                 <button 
                   className="btn btn-success btn-large"
                   onClick={handleValidate}
                 >
                   {t.importValidateButton || 'Valider et répartir'}
-                </button>
-              </div>
-            )}
+          </button>
+        </div>
+      )}
           </section>
           
           <section className="card quick-entry-section">
-            <h2 className="card-title">⚡ {t.quickEntry || 'Saisie rapide'}</h2>
+            <h2 className="card-title">⚡ {t.quickEntry || 'Quick Entry'}</h2>
             <div className="quick-entry-form">
               <div className="quick-entry-row">
                 <div className="quick-input-group">
@@ -494,7 +494,7 @@ const BankStatementImporter = () => {
                     onChange={(e) => setQuickEntry(prev => ({ ...prev, category: e.target.value }))}
                   >
                     <option value="">{t.selectCategory || 'Sélectionner une catégorie'}</option>
-                    {CATEGORY_OPTIONS.filter(opt => opt.key !== 'income' && opt.key !== 'autreArgentRecu').map(opt => (
+                    {CATEGORY_OPTIONS(t).filter(opt => opt.key !== 'income' && opt.key !== 'autreArgentRecu').map(opt => (
                       <option key={opt.key} value={opt.key}>{opt.label}</option>
                     ))}
                   </select>
@@ -520,7 +520,7 @@ const BankStatementImporter = () => {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder={t.optionalDescription || 'Description optionnelle'}
+                    placeholder={t.optionalDescription || 'Optional description'}
                     value={quickEntry.description}
                     onChange={(e) => setQuickEntry(prev => ({ ...prev, description: e.target.value }))}
                   />
@@ -547,10 +547,10 @@ const BankStatementImporter = () => {
                     <div key={index} className="quick-entry-item">
                       <div className="quick-entry-info">
                         <div className="quick-entry-category">
-                          {CATEGORY_OPTIONS.find(opt => opt.key === entry.category)?.label || entry.category}
+                          {CATEGORY_OPTIONS(t).find(opt => opt.key === entry.category)?.label || entry.category}
                         </div>
                         <div className="quick-entry-description">
-                          {entry.description || t.noDescription || 'Aucune description'}
+                          {entry.description || t.noDescription || 'No description'}
                         </div>
                         <div className="quick-entry-time">
                           {entry.time}

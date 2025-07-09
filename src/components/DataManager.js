@@ -55,7 +55,29 @@ const DataManager = ({ translations, currentLanguage }) => {
     }
 
     // Create CSV content
-    const headers = ['Month', 'Year', 'Income', 'Total Expenses', 'Balance', 'Rent', 'APL', 'Electricity', 'Internet', 'Phone', 'Subscriptions', 'Home Insurance', 'Car Insurance', 'Gym', 'Food', 'Gas', 'Cat Food', 'Leisure', 'Shopping', 'Savings', 'Emergency Fund'];
+    const headers = [
+      translations[currentLanguage]?.month || 'Month', 
+      translations[currentLanguage]?.year || 'Year', 
+      translations[currentLanguage]?.income || 'Income', 
+      translations[currentLanguage]?.totalExpenses || 'Total Expenses', 
+      translations[currentLanguage]?.balance || 'Balance', 
+      translations[currentLanguage]?.rent || 'Rent', 
+      translations[currentLanguage]?.apl || 'APL', 
+      translations[currentLanguage]?.electricity || 'Electricity', 
+      translations[currentLanguage]?.internet || 'Internet', 
+      translations[currentLanguage]?.phone || 'Phone', 
+      translations[currentLanguage]?.subscriptions || 'Subscriptions', 
+      translations[currentLanguage]?.insuranceHome || 'Home Insurance', 
+      translations[currentLanguage]?.insuranceCar || 'Car Insurance', 
+      translations[currentLanguage]?.gym || 'Gym', 
+      translations[currentLanguage]?.food || 'Food', 
+      translations[currentLanguage]?.gas || 'Gas', 
+      translations[currentLanguage]?.catFood || 'Cat Food', 
+      translations[currentLanguage]?.leisure || 'Leisure', 
+      translations[currentLanguage]?.shopping || 'Shopping', 
+      translations[currentLanguage]?.savings || 'Savings', 
+      translations[currentLanguage]?.unforeseen || 'Emergency Fund'
+    ];
     
     const csvContent = [
       headers.join(','),

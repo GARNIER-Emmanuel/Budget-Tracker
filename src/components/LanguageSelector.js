@@ -1,10 +1,12 @@
 import React from 'react';
 
 const LanguageSelector = ({ currentLanguage, onLanguageChange, translations }) => {
+  const t = translations[currentLanguage] || {};
+  
   return (
     <div className="language-selector">
       <label htmlFor="language-select" className="language-label">
-        {translations[currentLanguage].language}:
+        {t.language || 'Language'}:
       </label>
       <select
         id="language-select"
@@ -12,8 +14,8 @@ const LanguageSelector = ({ currentLanguage, onLanguageChange, translations }) =
         onChange={(e) => onLanguageChange(e.target.value)}
         className="language-select"
       >
-        <option value="en">{translations[currentLanguage].english}</option>
-        <option value="fr">{translations[currentLanguage].french}</option>
+        <option value="en">{t.english || 'English'}</option>
+        <option value="fr">{t.french || 'French'}</option>
       </select>
     </div>
   );

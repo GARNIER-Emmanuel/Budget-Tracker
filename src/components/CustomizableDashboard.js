@@ -135,7 +135,7 @@ const CustomizableDashboard = () => {
     <div className="dashboard-container">
       <header className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <h1 className="page-title">{t.dashboardTitle || 'Mon tableau de bord'}</h1>
+          <h1 className="page-title">{t.dashboardTitle || 'My Dashboard'}</h1>
           
           {/* Month selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
@@ -301,7 +301,7 @@ const CustomizableDashboard = () => {
             onDragEnd={handleDragEnd}
           >
             <button
-              aria-label={w.visible ? `${t.hideWidget || 'Masquer le widget'} ${widgetLabels[w.type]}` : `${t.showWidget || 'Afficher le widget'} ${widgetLabels[w.type]}`}
+              aria-label={w.visible ? `${t.hideWidget || 'Hide widget'} ${widgetLabels[w.type]}` : `${t.showWidget || 'Show widget'} ${widgetLabels[w.type]}`}
               tabIndex={0}
               onClick={() => toggleWidget(idx)}
               className="widget-toggle-btn"
@@ -314,13 +314,13 @@ const CustomizableDashboard = () => {
       </section>
       
       <section className="dashboard-custom">
-        <h2 className="heading-2">{t.addWidgets || 'Ajouter/afficher des widgets'}</h2>
+        <h2 className="heading-2">{t.addWidgets || 'Add/Show Widgets'}</h2>
         <div className="custom-widgets-grid">
           {widgets.map((w, idx) => !w.visible && (
             <button 
               key={w.type} 
               tabIndex={0} 
-              aria-label={`${t.showWidget || 'Afficher le widget'} ${widgetLabels[w.type]}`} 
+              aria-label={`${t.showWidget || 'Show widget'} ${widgetLabels[w.type]}`} 
               onClick={() => toggleWidget(idx)} 
               className="btn btn-secondary widget-add-btn"
             >

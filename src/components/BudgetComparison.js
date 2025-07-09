@@ -362,7 +362,7 @@ const BudgetComparison = (props) => {
     <div className="comparison-page">
       {/* Header */}
       <div className="page-header">
-        <h1 className="page-title">{t.comparisonTitle || 'Comparaison des budgets'}</h1>
+        <h1 className="page-title">{t.comparisonTitle || 'Budget Comparison'}</h1>
         <p className="page-description">{t.comparisonSubtitle || 'Analysez l\'évolution de vos finances sur plusieurs mois'}</p>
       </div>
 
@@ -384,7 +384,7 @@ const BudgetComparison = (props) => {
       {/* Budget List Section */}
       <div className="section">
         <div className="budget-list-header">
-          <h2 className="heading-2">{t.budgetList || 'Liste des budgets'}</h2>
+                      <h2 className="heading-2">{t.budgetList || 'Budget List'}</h2>
           <button 
             className="btn btn-secondary"
             onClick={() => setShowBudgetsMobile(!showBudgetsMobile)}

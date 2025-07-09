@@ -92,7 +92,7 @@ const BudgetInputPanel = ({
         {activeTab === 'income' && (
           <div className="tab-content">
             <div className="section-header" onClick={() => toggleSection('income')}>
-              <h3>{t.monthlyIncome || 'Revenus mensuels'}</h3>
+              <h3>{t.monthlyIncome || 'Monthly Income'}</h3>
               {expandedSections.income ? <FaChevronUp /> : <FaChevronDown />}
             </div>
             {expandedSections.income && (
@@ -142,7 +142,7 @@ const BudgetInputPanel = ({
         {activeTab === 'goals' && (
           <div className="tab-content">
             <div className="section-header" onClick={() => toggleSection('goals')}>
-              <h3>{t.financialGoals || 'Objectifs financiers'}</h3>
+              <h3>{t.financialGoals || 'Financial Goals'}</h3>
               {expandedSections.goals ? <FaChevronUp /> : <FaChevronDown />}
             </div>
             {expandedSections.goals && (

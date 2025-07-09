@@ -111,6 +111,7 @@ export const BUDGET_ACTIONS = {
 const budgetReducer = (state, action) => {
   switch (action.type) {
     case BUDGET_ACTIONS.SET_LANGUAGE:
+      localStorage.setItem('currentLanguage', action.payload);
       return { ...state, currentLanguage: action.payload };
       
     case BUDGET_ACTIONS.TOGGLE_DARK_MODE:
@@ -370,6 +371,14 @@ export const BudgetProvider = ({ children }) => {
         console.error('Error loading dark mode preference:', error);
       }
     }
+
+    // Load language preference
+    const savedLanguage = localStorage.getItem('currentLanguage');
+    if (savedLanguage && (savedLanguage === 'fr' || savedLanguage === 'en')) {
+      if (savedLanguage !== state.currentLanguage) {
+        dispatch({ type: BUDGET_ACTIONS.SET_LANGUAGE, payload: savedLanguage });
+      }
+    }
   }, []);
 
   // Apply dark mode class to body
@@ -380,6 +389,11 @@ export const BudgetProvider = ({ children }) => {
       document.body.classList.remove('dark-mode');
     }
   }, [state.isDarkMode]);
+
+  // Apply language to document
+  useEffect(() => {
+    document.documentElement.lang = state.currentLanguage;
+  }, [state.currentLanguage]);
 
   // Auto-save functionality
   useEffect(() => {

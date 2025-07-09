@@ -343,8 +343,8 @@ function AppContent() {
       />
       
       <main className="main-content">
-        {currentPage === 'dashboard' && <CustomizableDashboard />}
-        {currentPage === 'tracker' && <BankStatementImporter />}
+        {currentPage === 'dashboard' && <CustomizableDashboard key={currentLanguage} />}
+        {currentPage === 'tracker' && <BankStatementImporter key={currentLanguage} />}
         {currentPage === 'comparison' && (
           <BudgetComparison
             translations={translations}

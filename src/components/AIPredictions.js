@@ -137,7 +137,7 @@ const AIPredictions = ({ translations, currentLanguage, isDarkMode }) => {
       const predictedValue = typeof lastValue === 'number' && !isNaN(lastValue) ? lastValue * 1.02 : 0;
       
       predictions.chartData = {
-        labels: [...months, 'Next Month'],
+        labels: [...months, translations[currentLanguage].nextMonth || 'Next Month'],
         datasets: [
           {
             label: translations[currentLanguage].actualExpenses || 'Actual Expenses',
