@@ -225,6 +225,12 @@ app.delete('/api/categories/:id', authenticateToken, async (req, res) => {
     } catch (err) { console.error(err); res.status(500).send("Error"); }
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+// Export app for Vercel
+module.exports = app;
+
+// Only listen if not running in Vercel (local node server.js)
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+}
