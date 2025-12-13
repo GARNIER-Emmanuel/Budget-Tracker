@@ -74,9 +74,9 @@ ChartJS.register(
   Filler
 );
 
-export default function Dashboard() {
+// --- MAIN COMPONENT ---
+export default function Dashboard({ isDarkMode, setIsDarkMode }) {
   const { user, token, logout } = useAuth();
-  // removed authMode state
 
   // --- États ---
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -84,8 +84,10 @@ export default function Dashboard() {
   const [filterType, setFilterType] = useState('all');
 
   // API URL
-  // API URL
   const API_URL = process.env.REACT_APP_API_URL || `http://${window.location.hostname}:5000/api`;
+
+  // --- SOFT GLASS THEME ---
+  const theme = getTheme(isDarkMode);
 
   // State Definitions
   const [categories, setCategories] = useState([]);
@@ -95,18 +97,6 @@ export default function Dashboard() {
   const [recurringRules, setRecurringRules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Theme State
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('nova_theme');
-    return saved ? JSON.parse(saved) : true;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('nova_theme', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
-
-  // Fetch API Data
-  // Fetch API Data
   // API Helper
   const authFetch = async (endpoint, options = {}) => {
     const headers = {
@@ -749,8 +739,7 @@ export default function Dashboard() {
   const generateFinancialAdvice = generateRuleBasedAdvice;
   const generatePrediction = generateSimplePrediction;
 
-  // --- SOFT GLASS THEME ---
-  const theme = getTheme(isDarkMode);
+
 
   const SidebarItem = ({ id, icon: Icon, label }) => (
     <button onClick={() => { setActiveTab(id); }} className={`group flex items-center w-full space-x-3 px-5 py-3 rounded-2xl transition-all duration-200 ${activeTab === id ? (isDarkMode ? 'bg-blue-600/10 text-blue-400' : 'bg-blue-50 text-blue-600') : theme.textMuted} hover:bg-opacity-80`}>
