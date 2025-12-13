@@ -214,6 +214,13 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: window.innerWidth < 768 ? 0 : 750, // Disable animation on mobile
+    },
+    hover: {
+      animationDuration: 0, // Disable hover animation
+    },
+    response: true, // Resize on window resize
     interaction: {
       mode: 'index',
       intersect: false,
