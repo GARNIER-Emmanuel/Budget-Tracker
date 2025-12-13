@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
-    // API URL from environment or default
-    const API_URL = 'http://localhost:5000/api';
+    // API URL - Dynamic for local network access
+    const API_URL = `http://${window.location.hostname}:5000/api`;
 
     useEffect(() => {
         const checkUser = async () => {

@@ -30,13 +30,13 @@ app.post('/api/auth/register', async (req, res) => {
 
         // Create Default Categories for new user
         const defaultCategories = [
-            ['Alimentation', 400, 'bg-emerald-500', 'shopping-bag'],
-            ['Logement', 1000, 'bg-blue-500', 'home'],
-            ['Transport', 150, 'bg-indigo-500', 'car'],
-            ['Loisirs', 200, 'bg-purple-500', 'coffee'],
-            ['Santé', 50, 'bg-rose-500', 'activity'],
-            ['Shopping', 100, 'bg-pink-500', 'gift'],
-            ['Factures', 150, 'bg-orange-500', 'zap'],
+            ['Alimentation', 0, 'bg-emerald-500', 'shopping-bag'],
+            ['Logement', 0, 'bg-blue-500', 'home'],
+            ['Transport', 0, 'bg-indigo-500', 'car'],
+            ['Loisirs', 0, 'bg-purple-500', 'coffee'],
+            ['Santé', 0, 'bg-rose-500', 'activity'],
+            ['Shopping', 0, 'bg-pink-500', 'gift'],
+            ['Factures', 0, 'bg-orange-500', 'zap'],
             ['Revenus', 0, 'bg-green-500', 'wallet'],
             ['Épargne', 0, 'bg-cyan-500', 'piggy-bank']
         ];

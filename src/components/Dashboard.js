@@ -84,7 +84,7 @@ export default function Dashboard() {
   const [filterType, setFilterType] = useState('all');
 
   // API URL
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = `http://${window.location.hostname}:5000/api`;
 
   // State Definitions
   const [categories, setCategories] = useState([]);
@@ -144,15 +144,28 @@ export default function Dashboard() {
   // Dashboard is only rendered when authenticated
 
 
-  // --- Helpers ---
-  const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(parseFloat(amount) || 0);
+
+  const ICON_MAP = {
+    'shopping-bag': ShoppingBag,
+    'home': Home,
+    'car': Car,
+    'coffee': Coffee,
+    'activity': Activity,
+    'gift': Sparkles,
+    'zap': Zap,
+    'wallet': Wallet,
+    'circle': Hexagon,
+    'piggy-bank': Wallet,
+    'plane': Plane,
+    'smartphone': Smartphone,
+    'repeat': Repeat,
+    'target': Target
+  };
 
   const getCategoryIcon = (categoryName) => {
     const cat = categories.find(c => c.name === categoryName);
-    const icons = {
-      'shopping-bag': ShoppingBag, 'home': Home, 'car': Car, 'coffee': Coffee, 'activity': Activity, 'gift': Sparkles, 'zap': Zap, 'wallet': Wallet, 'circle': Hexagon, 'piggy-bank': Wallet
-    };
-    const IconComponent = cat ? (icons[cat.icon] || Zap) : Zap;
+    const IconComponent = cat ? (ICON_MAP[cat.icon] || Zap) : Zap;
     return <IconComponent size={18} />;
   };
 
@@ -408,21 +421,10 @@ export default function Dashboard() {
     'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500', 'bg-teal-500', 'bg-sky-500', 'bg-indigo-500', 'bg-violet-500', 'bg-fuchsia-500'
   ];
 
-  const ICONS = [
-    { id: 'shopping-bag', component: ShoppingBag },
-    { id: 'home', component: Home },
-    { id: 'car', component: Car },
-    { id: 'coffee', component: Coffee },
-    { id: 'activity', component: Activity },
-    { id: 'gift', component: Sparkles },
-    { id: 'zap', component: Zap },
-    { id: 'wallet', component: Wallet },
-    { id: 'circle', component: Hexagon },
-    { id: 'plane', component: Plane },
-    { id: 'smartphone', component: Smartphone },
-    { id: 'repeat', component: Repeat },
-    { id: 'target', component: Target }
-  ];
+  const ICONS = Object.keys(ICON_MAP).map(key => ({
+    id: key,
+    component: ICON_MAP[key]
+  }));
 
   // --- Handlers ---
 
@@ -1219,32 +1221,35 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  {categories.map(cat => (
-                    <div key={cat.id} className={`flex items-center justify-between p-4 rounded-xl border ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${cat.color}`}>
-                          {getCategoryIcon(cat.name)}
+                  {categories.map(cat => {
+                    const IconComponent = ICON_MAP[cat.icon] || Zap;
+                    return (
+                      <div key={cat.id} className={`flex items-center justify-between p-4 rounded-xl border ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${cat.color}`}>
+                            <IconComponent size={20} />
+                          </div>
+                          <div>
+                            <p className={`font-medium ${theme.textMain}`}>{cat.name}</p>
+                            <p className={`text-xs ${theme.textMuted}`}>Budget: {formatCurrency(cat.budget)}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className={`font-medium ${theme.textMain}`}>{cat.name}</p>
-                          <p className={`text-xs ${theme.textMuted}`}>Budget: {formatCurrency(cat.budget)}</p>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => openEditCategory(cat)} className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-400'}`}>
+                            <Pencil size={16} />
+                          </button>
+                          {/* Prevent deleting default categories if needed, or allow all */}
+                          <button onClick={() => {
+                            if (window.confirm("Supprimer cette catégorie ?")) {
+                              setCategories(categories.filter(c => c.id !== cat.id));
+                            }
+                          }} className={`p-2 rounded-lg hover:bg-red-500/10 text-red-500`}>
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openEditCategory(cat)} className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-400'}`}>
-                          <Pencil size={16} />
-                        </button>
-                        {/* Prevent deleting default categories if needed, or allow all */}
-                        <button onClick={() => {
-                          if (window.confirm("Supprimer cette catégorie ?")) {
-                            setCategories(categories.filter(c => c.id !== cat.id));
-                          }
-                        }} className={`p-2 rounded-lg hover:bg-red-500/10 text-red-500`}>
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
