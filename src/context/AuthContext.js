@@ -10,7 +10,8 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     // API URL - Dynamic for local network access
-    const API_URL = `http://${window.location.hostname}:5000/api`;
+    // API URL - Environment variable for Prod, Dynamic ID for Local
+    const API_URL = process.env.REACT_APP_API_URL || `http://${window.location.hostname}:5000/api`;
 
     useEffect(() => {
         const checkUser = async () => {

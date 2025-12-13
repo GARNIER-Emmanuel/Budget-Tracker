@@ -84,7 +84,8 @@ export default function Dashboard() {
   const [filterType, setFilterType] = useState('all');
 
   // API URL
-  const API_URL = `http://${window.location.hostname}:5000/api`;
+  // API URL
+  const API_URL = process.env.REACT_APP_API_URL || `http://${window.location.hostname}:5000/api`;
 
   // State Definitions
   const [categories, setCategories] = useState([]);
