@@ -108,13 +108,78 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
     return fetch(`${API_URL}${endpoint}`, { ...options, headers });
   };
 
+  // Auto-Repair Logic
+  const analyzeAndFixData = async (data) => {
+    let requestMade = false;
+    const { transactions, goals, subscriptions, categories } = data;
+
+    // 1. Check Missing Subscriptions
+    const recurringExpenses = transactions.filter(t => t.is_recurring && t.type === 'expense');
+    const uniqueRecurring = new Map();
+    recurringExpenses.forEach(t => {
+      const key = t.title.toLowerCase().trim();
+      if (!uniqueRecurring.has(key)) uniqueRecurring.set(key, t);
+    });
+
+    for (const t of uniqueRecurring.values()) {
+      const exists = subscriptions.some(s => s.title.toLowerCase().trim() === t.title.toLowerCase().trim());
+      if (!exists) {
+        try {
+          const catObj = categories.find(c => c.name === t.category);
+          await authFetch('/subscriptions', {
+            method: 'POST',
+            body: JSON.stringify({
+              title: t.title,
+              amount: parseFloat(t.amount),
+              category: t.category,
+              renewal_date: t.date,
+              icon: catObj ? catObj.icon : 'zap'
+            })
+          });
+          requestMade = true;
+        } catch (e) { console.error(e); }
+      }
+    }
+
+    // 2. Check Goal discrepancies
+    for (const goal of goals) {
+      const relatedSavings = transactions.filter(t =>
+        t.type === 'saving' &&
+        (t.title === `Économie : ${goal.name}` || t.title.includes(goal.name))
+      );
+      const realTotal = relatedSavings.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+      if (Math.abs(realTotal - parseFloat(goal.current_amount || 0)) > 0.01) {
+        try {
+          await authFetch(`/goals/${goal.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ ...goal, current_amount: realTotal })
+          });
+          requestMade = true;
+        } catch (e) { console.error(e); }
+      }
+    }
+
+    return requestMade;
+  };
+
   // Fetch API Data
-  const fetchData = async () => {
+  const fetchData = async (skipSync = false) => {
     if (!user) return;
     try {
       const res = await authFetch('/init');
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
+
+      // Auto-Sync on first load
+      if (!skipSync) {
+        const hasFixed = await analyzeAndFixData(data);
+        if (hasFixed) {
+          // If fixes were made, re-fetch clean data immediately
+          return fetchData(true);
+        }
+      }
+
       setTransactions(data.transactions || []);
       setCategories(data.categories || []);
       setGoals(data.goals || []);
@@ -165,8 +230,9 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
   const stats = useMemo(() => {
     const income = transactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
     const expense = transactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
-    const balance = income - expense;
-    return { income, expense, balance };
+    const savingsOutflow = transactions.filter(t => t.type === 'saving').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+    const balance = income - expense - savingsOutflow;
+    return { income, expense, balance, savingsOutflow };
   }, [transactions]);
 
   // --- Other States (Modal, AI, etc.) ---
@@ -182,7 +248,8 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
     title: '', amount: '', type: 'expense', category: 'Autre', date: new Date().toISOString().split('T')[0], isRecurring: false, targetGoalId: '',
     goalName: '', goalTarget: '', goalCurrent: '',
     subName: '', subAmount: '', subCategory: 'Autre',
-    catName: '', catBudget: '', catColor: 'bg-gray-500', catIcon: 'circle'
+    catName: '', catBudget: '', catColor: 'bg-gray-500', catIcon: 'circle',
+    installments: 1 // Add installments state
   });
 
   // --- Handlers (Placeholders for now, need updates) ---
@@ -193,18 +260,19 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
       title: '', amount: '', type: 'expense', category: 'Autre', date: new Date().toISOString().split('T')[0], isRecurring: false, targetGoalId: '',
       goalName: '', goalTarget: '', goalCurrent: '',
       subName: '', subAmount: '', subCategory: 'Autre',
-      catName: '', catBudget: '', catColor: 'bg-gray-500', catIcon: 'circle'
+      catName: '', catBudget: '', catColor: 'bg-gray-500', catIcon: 'circle',
+      installments: 1
     });
   };
 
 
   const categoriesBreakdown = useMemo(() => {
     const expenses = transactions.filter(t => t.type === 'expense');
-    const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalExpenses = expenses.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
     const breakdown = {};
     expenses.forEach(t => {
       if (!breakdown[t.category]) breakdown[t.category] = 0;
-      breakdown[t.category] += t.amount;
+      breakdown[t.category] += parseFloat(t.amount);
     });
     return Object.keys(breakdown).map(cat => ({
       name: cat, amount: breakdown[cat], percentage: totalExpenses > 0 ? (breakdown[cat] / totalExpenses) * 100 : 0
@@ -212,6 +280,8 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
   }, [transactions]);
 
   // --- PRO CHART CONFIGURATION ---
+
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -282,9 +352,9 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
     const sorted = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
     const dailyMap = new Map();
     sorted.forEach(t => {
-      const date = t.date;
+      const date = t.date; // Date string from DB (YYYY-MM-DD or ISO)
       if (!dailyMap.has(date)) dailyMap.set(date, 0);
-      dailyMap.set(date, dailyMap.get(date) + (t.type === 'income' ? t.amount : -t.amount));
+      dailyMap.set(date, dailyMap.get(date) + (t.type === 'income' ? parseFloat(t.amount) : -parseFloat(t.amount)));
     });
 
     const labels = Array.from(dailyMap.keys());
@@ -336,8 +406,8 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
       months.push(monthLabel);
 
       const monthTransactions = transactions.filter(t => t.date.startsWith(monthKey));
-      const inc = monthTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-      const exp = monthTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
+      const inc = monthTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+      const exp = monthTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
       incomeData.push(inc);
       expenseData.push(exp);
     }
@@ -384,11 +454,11 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
     const needsCats = ['Logement', 'Alimentation', 'Transport', 'Santé', 'Factures'];
     const needsAmount = transactions
       .filter(t => t.type === 'expense' && needsCats.some(c => t.category.includes(c)))
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     const savingsAmount = transactions
       .filter(t => t.type === 'saving' || t.category.includes('Épargne'))
-      .reduce((sum, t) => sum + t.amount, 0) + (stats.balance > 0 ? stats.balance : 0); // Count explicit savings + unspent
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0) + (stats.balance > 0 ? stats.balance : 0); // Count explicit savings + unspent
 
     const wantsAmount = stats.expense - needsAmount; // Remaining expenses are wants
 
@@ -428,7 +498,7 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
   // --- Handlers ---
 
   const openEditGoal = (goal) => {
-    setInputs(prev => ({ ...prev, goalName: goal.name, goalTarget: goal.target, goalCurrent: goal.current }));
+    setInputs(prev => ({ ...prev, goalName: goal.name, goalTarget: goal.target_amount, goalCurrent: goal.current_amount }));
     setEditId(goal.id);
     setModalMode('goal');
     setIsModalOpen(true);
@@ -604,6 +674,42 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
 
     if ((!finalTitle && !inputs.targetGoalId) || !inputs.amount) return;
 
+    // SPLIT PAYMENT LOGIC
+    if (inputs.type === 'split') {
+      const totalAmount = parseFloat(inputs.amount);
+      const count = parseInt(inputs.installments) || 3;
+      const perMonth = totalAmount / count;
+
+      let currentDate = new Date(finalDate);
+
+      try {
+        for (let i = 0; i < count; i++) {
+          const payload = {
+            title: `${finalTitle} (${i + 1}/${count})`,
+            amount: perMonth,
+            type: 'expense', // Stored as expense
+            category: finalCategory,
+            date: currentDate.toISOString().split('T')[0],
+            is_recurring: false
+          };
+
+          await authFetch(`/transactions`, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+
+          // Increment month
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        fetchData();
+        setIsModalOpen(false);
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de la création du paiement fractionné");
+      }
+      return;
+    }
+
     const payload = {
       title: finalTitle,
       amount: parseFloat(inputs.amount),
@@ -628,6 +734,37 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error('Create failed');
+
+        // Auto-create Subscription if recurring
+        if (inputs.isRecurring && inputs.type === 'expense') {
+          const catObj = categories.find(c => c.name === finalCategory);
+          const subPayload = {
+            title: finalTitle,
+            amount: parseFloat(inputs.amount),
+            category: finalCategory,
+            renewal_date: finalDate,
+            icon: catObj ? catObj.icon : 'zap'
+          };
+          await authFetch('/subscriptions', {
+            method: 'POST',
+            body: JSON.stringify(subPayload)
+          });
+        }
+
+        // Auto-update Goal if linked saving
+        if (inputs.type === 'saving' && inputs.targetGoalId) {
+          const goal = goals.find(g => g.id === parseInt(inputs.targetGoalId));
+          if (goal) {
+            const newAmount = parseFloat(goal.current_amount || 0) + parseFloat(inputs.amount);
+            await authFetch(`/goals/${goal.id}`, {
+              method: 'PUT',
+              body: JSON.stringify({
+                ...goal,
+                current_amount: newAmount
+              })
+            });
+          }
+        }
       }
       fetchData(); // Refresh all data
       setIsModalOpen(false);
@@ -807,6 +944,8 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
     };
     reader.readAsText(file);
   };
+
+
 
   return (
     <div className={`flex h-screen font-sans overflow-hidden transition-colors duration-300 ${theme.bg}`}>
@@ -1086,11 +1225,11 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
                     </div>
                     <h3 className={`font-bold text-lg mb-1 ${theme.textMain}`}>{goal.name}</h3>
                     <div className="flex justify-between items-end mb-3">
-                      <span className={`text-xl font-bold ${theme.accentVar}`}>{formatCurrency(goal.current)}</span>
-                      <span className={`text-xs ${theme.textMuted}`}>/ {formatCurrency(goal.target)}</span>
+                      <span className={`text-xl font-bold ${theme.accentVar}`}>{formatCurrency(goal.current_amount)}</span>
+                      <span className={`text-xs ${theme.textMuted}`}>/ {formatCurrency(goal.target_amount)}</span>
                     </div>
                     <div className={`w-full h-2 rounded-full ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'}`}>
-                      <div className={`h-full rounded-full ${goal.color}`} style={{ width: `${Math.min(100, (goal.current / goal.target) * 100)}%` }}></div>
+                      <div className={`h-full rounded-full ${goal.color}`} style={{ width: `${Math.min(100, (parseFloat(goal.current_amount) / parseFloat(goal.target_amount)) * 100)}%` }}></div>
                     </div>
                   </div>
                 ))}
@@ -1202,6 +1341,8 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
                     Choisir un fichier JSON
                   </label>
                 </div>
+
+
               </div>
 
               {/* CATEGORIES MANAGEMENT */}
@@ -1455,9 +1596,17 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
                   <>
                     <div className="flex gap-4">
                       <button type="button" onClick={() => setInputs({ ...inputs, type: 'expense' })} className={`flex-1 py-2.5 rounded-2xl border font-medium text-xs transition-all ${inputs.type === 'expense' ? 'border-rose-500 bg-rose-500/10 text-rose-500' : 'border-transparent bg-gray-500/5 text-gray-500'}`}>Dépense</button>
+                      <button type="button" onClick={() => setInputs({ ...inputs, type: 'split' })} className={`flex-1 py-2.5 rounded-2xl border font-medium text-xs transition-all ${inputs.type === 'split' ? 'border-purple-500 bg-purple-500/10 text-purple-500' : 'border-transparent bg-gray-500/5 text-gray-500'}`}>Fractionné</button>
                       <button type="button" onClick={() => setInputs({ ...inputs, type: 'income' })} className={`flex-1 py-2.5 rounded-2xl border font-medium text-xs transition-all ${inputs.type === 'income' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-transparent bg-gray-500/5 text-gray-500'}`}>Revenu</button>
                       <button type="button" onClick={() => setInputs({ ...inputs, type: 'saving' })} className={`flex-1 py-2.5 rounded-2xl border font-medium text-xs transition-all ${inputs.type === 'saving' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-transparent bg-gray-500/5 text-gray-500'}`}>Économie</button>
                     </div>
+
+                    {inputs.type === 'split' && (
+                      <div className="space-y-2 animate-fade-in">
+                        <label className={`text-xs font-medium ml-1 ${theme.textMuted}`}>Nombre d'échéances (mois)</label>
+                        <input type="number" min="2" max="48" className={`w-full p-3 rounded-lg outline-none border ${theme.input}`} value={inputs.installments} onChange={e => setInputs({ ...inputs, installments: e.target.value })} placeholder="Ex: 3 ou 4" />
+                      </div>
+                    )}
 
                     {inputs.type === 'saving' && (
                       <div className="space-y-2">
