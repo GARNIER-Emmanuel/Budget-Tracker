@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Loader2, Briefcase } from 'lucide-react';
 import { getTheme } from '../../constants/theme';
+import logo from '../../assets/logo.png';
 
 export default function Login({ onSwitch, isDarkMode, toggleTheme }) {
     const { login } = useAuth();
@@ -37,9 +38,7 @@ export default function Login({ onSwitch, isDarkMode, toggleTheme }) {
 
             <div className={`w-full max-w-md ${theme.glass} p-8 rounded-3xl`}>
                 <div className="flex justify-center mb-6">
-                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-                        <Briefcase size={24} />
-                    </div>
+                    <img src={logo} alt="Nova Budget" className="w-16 h-16 rounded-2xl shadow-lg shadow-blue-600/20 object-cover" />
                 </div>
                 <h2 className={`text-3xl font-bold text-center mb-2 ${theme.textMain}`}>Bienvenue</h2>
                 <p className={`text-center mb-8 ${theme.textMuted}`}>Connectez-vous pour gérer votre budget</p>

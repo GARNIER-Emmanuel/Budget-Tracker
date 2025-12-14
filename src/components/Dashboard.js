@@ -60,6 +60,7 @@ import CalendarView from './CalendarView';
 import BottomNavigation from './BottomNavigation';
 // Auth components removed as handled by App.js wrapper
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo.png';
 
 ChartJS.register(
   CategoryScale,
@@ -816,9 +817,7 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
       {/* Sidebar */}
       <aside className={`hidden md:flex flex-col w-64 z-20 ${theme.panel}`}>
         <div className="p-6 flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-sm">
-            <Briefcase size={18} />
-          </div>
+          <img src={logo} alt="Nova Budget" className="w-10 h-10 rounded-xl shadow-sm object-cover" />
           <h1 className={`text-xl font-bold tracking-tight ${theme.textMain}`}>Nova<span className="text-blue-500">Budget</span></h1>
         </div>
 
@@ -851,9 +850,7 @@ export default function Dashboard({ isDarkMode, setIsDarkMode }) {
       <main className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
         <header className={`h-16 flex items-center justify-between px-6 z-20 border-b ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-200 bg-white'}`}>
           <div className="md:hidden flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-sm">
-              <Briefcase size={18} />
-            </div>
+            <img src={logo} alt="Nova Budget" className="w-8 h-8 rounded-lg shadow-sm object-cover" />
             <h1 className={`text-lg font-bold tracking-tight ${theme.textMain}`}>Nova<span className="text-blue-500">Budget</span></h1>
           </div>
           <h2 className={`hidden md:block text-lg font-semibold ${theme.textMain} first-letter:uppercase`}>
